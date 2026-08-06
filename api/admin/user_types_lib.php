@@ -38,7 +38,25 @@ const SUBMENU_KEYS = [
 const ACTION_KEYS = [
     'staff.edit',
     'staff.delete',
+    'staff.export',
+    'staff.create',
+    'staff.departments',
+    'staff.usertypes',
 ];
+
+// ปุ่มด้านบนหน้าข้อมูลเจ้าหน้าที่ ที่เดิมไม่เคยคุมสิทธิ์ (ใครเข้าหน้านี้ได้ก็เห็นหมด)
+// ใช้ตอน backfill ให้ประเภทเดิมไม่เสียสิทธิ์ที่เคยมีหลังอัปเดต
+//
+// จงใจไม่รวม staff.usertypes: ปุ่มนั้นเปลี่ยน user_type ของใครก็ได้ ประเภทที่ได้ไป
+// จะตั้งตัวเองเป็น admin ได้ = ยกระดับเป็น superuser ต้องให้ผู้ดูแลติ๊กเองเท่านั้น
+const STAFF_PAGE_ACTION_KEYS = [
+    'staff.export',
+    'staff.create',
+    'staff.departments',
+];
+
+// ธงกันไม่ให้ backfill ซ้ำ — ถ้าไม่มีธงนี้ ผู้ดูแลจะติ๊กปุ่มออกทั้ง 4 อันไม่ได้เลย เพราะจะถูกเติมคืนทุกครั้งที่อ่าน
+const STAFF_ACTION_BACKFILL_KEY = 'menu_permissions_staff_actions_backfilled';
 
 /** คีย์ทั้งหมดที่ยอมรับได้ตอนบันทึกสิทธิ์ */
 function allAccessKeys(): array
@@ -89,6 +107,33 @@ function ensureUserTypeSchema(PDO $conn): void
     if ($column && stripos($column['Type'], 'enum') === 0) {
         $conn->exec("ALTER TABLE users MODIFY COLUMN user_type VARCHAR(30) NOT NULL DEFAULT 'staff'");
     }
+
+    backfillStaffPageActions($conn);
+}
+
+/**
+ * เติมสิทธิ์ปุ่มบนหน้าข้อมูลเจ้าหน้าที่ให้ประเภทที่มีสิทธิ์เมนู staff อยู่แล้ว — ทำครั้งเดียว
+ *
+ * ก่อนเวอร์ชันนี้ปุ่มส่งออก Excel / เพิ่มเจ้าหน้าที่ / จัดการฝ่าย-แผนก / จัดการ user_type
+ * ไม่เคยคุมสิทธิ์ ใครเข้าหน้านี้ได้ก็กดได้หมด ถ้าไม่เติมให้ ปุ่มจะหายไปเงียบ ๆ หลังอัปเดต
+ */
+function backfillStaffPageActions(PDO $conn): void
+{
+    $done = $conn->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+    $done->execute([STAFF_ACTION_BACKFILL_KEY]);
+    if ($done->fetch()) return;
+
+    $permissions = getMenuPermissions($conn);
+    foreach ($permissions as $code => $keys) {
+        if (!in_array('staff', $keys, true)) continue;
+        $permissions[$code] = array_values(array_unique(array_merge($keys, STAFF_PAGE_ACTION_KEYS)));
+    }
+    saveMenuPermissions($conn, $permissions);
+
+    // ปักธงก่อนจบ ไม่งั้นรอบหน้าจะเติมคืนทับสิ่งที่ผู้ดูแลเพิ่งติ๊กออก
+    $mark = $conn->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, '1')
+                            ON DUPLICATE KEY UPDATE setting_value = '1'");
+    $mark->execute([STAFF_ACTION_BACKFILL_KEY]);
 }
 
 function getUserTypes(PDO $conn): array

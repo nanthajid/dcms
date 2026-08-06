@@ -42,10 +42,15 @@ export const ALL_SUBMENU_KEYS = Object.values(SUBMENU_CATALOG)
 
 /**
  * สิทธิ์ระดับปุ่ม/การกระทำ (ไม่ใช่เมนู) — เก็บรวมใน map สิทธิ์ชุดเดียวกับเมนู
+ * ทุกคีย์ต้องตรงกับ ACTION_KEYS ใน api/admin/user_types_lib.php
  */
 export const ACTION_CATALOG: MenuAccessItem[] = [
   { key: 'staff.edit', label: 'แก้ไขข้อมูลเจ้าหน้าที่' },
   { key: 'staff.delete', label: 'ลบข้อมูลเจ้าหน้าที่' },
+  { key: 'staff.export', label: 'ส่งออก Excel' },
+  { key: 'staff.create', label: 'เพิ่มเจ้าหน้าที่ใหม่' },
+  { key: 'staff.departments', label: 'จัดการฝ่าย/แผนก' },
+  { key: 'staff.usertypes', label: 'จัดการ user_type' },
 ];
 
 /** รายการทั้งหมดที่แสดงในตารางกำหนดสิทธิ์ */

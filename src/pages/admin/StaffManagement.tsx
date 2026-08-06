@@ -36,6 +36,16 @@ import {
   type UserTypeOption
 } from '../../config/menuAccess';
 
+/** ไอคอนประจำสิทธิ์ระดับปุ่ม ให้ตรงกับปุ่มจริงในหน้า จะได้เทียบง่ายตอนติ๊ก */
+const ACTION_ICONS: Record<string, { Icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = {
+  'staff.edit': { Icon: Wrench, color: 'text-blue-400' },
+  'staff.delete': { Icon: Trash2, color: 'text-red-400' },
+  'staff.export': { Icon: FileDown, color: 'text-emerald-500' },
+  'staff.create': { Icon: Plus, color: 'text-primary' },
+  'staff.departments': { Icon: Settings, color: 'text-slate-500' },
+  'staff.usertypes': { Icon: ShieldCheck, color: 'text-amber-500' },
+};
+
 const staffSchema = z.object({
   StID: z.string().min(1, 'กรุณาระบุรหัสเจ้าหน้าที่'),
   StName: z.string().min(1, 'กรุณาระบุชื่อ-นามสกุล'),
@@ -971,6 +981,10 @@ const StaffManagement: React.FC = () => {
 
   const canEditStaff = isActionAllowed('staff.edit', adminUser.user_type, permissions);
   const canDeleteStaff = isActionAllowed('staff.delete', adminUser.user_type, permissions);
+  const canExportStaff = isActionAllowed('staff.export', adminUser.user_type, permissions);
+  const canCreateStaff = isActionAllowed('staff.create', adminUser.user_type, permissions);
+  const canManageDepartments = isActionAllowed('staff.departments', adminUser.user_type, permissions);
+  const canManageUserTypes = isActionAllowed('staff.usertypes', adminUser.user_type, permissions);
 
   useEffect(() => {
     if (!permissionsLoaded) return;
@@ -1024,34 +1038,42 @@ const StaffManagement: React.FC = () => {
           <p className="text-gray-500">จัดการข้อมูลเจ้าหน้าที่และบุคลากรในระบบ ({staffs.length} ท่าน)</p>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={handleExportExcel}
-            className="bg-white border border-emerald-600 text-emerald-600 px-4 py-2 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
-          >
-            <FileDown size={18} />
-            <span>ส่งออก Excel</span>
-          </button>
-          <button
-            onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="bg-white border border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
-          >
-            <Plus size={18} />
-            <span>เพิ่มเจ้าหน้าที่ใหม่</span>
-          </button>
-          <button
-            onClick={() => setManageModal({ open: true, type: 'department' })}
-            className="bg-white border border-slate-700 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-700 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
-          >
-            <Settings size={18} />
-            <span>จัดการฝ่าย/แผนก</span>
-          </button>
-          <button
-            onClick={openUserTypeModal}
-            className="bg-white border border-amber-600 text-amber-600 px-4 py-2 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
-          >
-            <ShieldCheck size={18} />
-            <span>จัดการ user_type</span>
-          </button>
+          {canExportStaff && (
+            <button
+              onClick={handleExportExcel}
+              className="bg-white border border-emerald-600 text-emerald-600 px-4 py-2 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
+            >
+              <FileDown size={18} />
+              <span>ส่งออก Excel</span>
+            </button>
+          )}
+          {canCreateStaff && (
+            <button
+              onClick={() => { resetForm(); setIsModalOpen(true); }}
+              className="bg-white border border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
+            >
+              <Plus size={18} />
+              <span>เพิ่มเจ้าหน้าที่ใหม่</span>
+            </button>
+          )}
+          {canManageDepartments && (
+            <button
+              onClick={() => setManageModal({ open: true, type: 'department' })}
+              className="bg-white border border-slate-700 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-700 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
+            >
+              <Settings size={18} />
+              <span>จัดการฝ่าย/แผนก</span>
+            </button>
+          )}
+          {canManageUserTypes && (
+            <button
+              onClick={openUserTypeModal}
+              className="bg-white border border-amber-600 text-amber-600 px-4 py-2 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm flex items-center gap-2 font-medium"
+            >
+              <ShieldCheck size={18} />
+              <span>จัดการ user_type</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1445,7 +1467,11 @@ const StaffManagement: React.FC = () => {
             <UserCircle className="w-10 h-10 text-gray-300" />
           </div>
           <h3 className="text-lg font-semibold text-gray-700">ยังไม่มีข้อมูลเจ้าหน้าที่{activeTab !== 'ALL' ? 'ในฝ่ายนี้' : ''}</h3>
-          <p className="text-gray-500 mt-1">กดปุ่ม "เพิ่มเจ้าหน้าที่ใหม่" เพื่อเริ่มสร้างข้อมูล</p>
+          <p className="text-gray-500 mt-1">
+            {canCreateStaff
+              ? 'กดปุ่ม "เพิ่มเจ้าหน้าที่ใหม่" เพื่อเริ่มสร้างข้อมูล'
+              : 'กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มข้อมูล'}
+          </p>
         </div>
       )}
 
@@ -1718,22 +1744,23 @@ const StaffManagement: React.FC = () => {
                             </React.Fragment>
                           ))}
 
-                          {/* สิทธิ์ระดับปุ่มในการ์ดเจ้าหน้าที่ */}
+                          {/* สิทธิ์ระดับปุ่มในหน้าข้อมูลเจ้าหน้าที่ (ทั้งปุ่มบนการ์ดและปุ่มด้านบนหน้า) */}
                           <div className="flex items-center gap-2 px-3 pt-4 pb-1">
                             <span className="w-56 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                              ปุ่มในการ์ดเจ้าหน้าที่
+                              ปุ่มในหน้าข้อมูลเจ้าหน้าที่
                             </span>
                           </div>
 
-                          {ACTION_CATALOG.map(item => (
+                          {ACTION_CATALOG.map(item => {
+                            const { Icon, color } = ACTION_ICONS[item.key] ?? { Icon: Settings, color: 'text-gray-400' };
+
+                            return (
                             <div
                               key={item.key}
                               className="flex items-center gap-2 px-3 py-2.5 bg-amber-50/40 rounded-lg border border-amber-100"
                             >
                               <span className="w-56 text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                                {item.key === 'staff.delete'
-                                  ? <Trash2 size={14} className="text-red-400" />
-                                  : <Settings size={14} className="text-gray-400" />}
+                                <Icon size={14} className={color} />
                                 {item.label}
                               </span>
                               {availableUserTypes.map(type => {
@@ -1753,7 +1780,8 @@ const StaffManagement: React.FC = () => {
                                 );
                               })}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
