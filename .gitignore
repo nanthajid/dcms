@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---- ความลับ: ห้ามขึ้น GitHub เด็ดขาด ----
+# git ไม่รองรับคอมเมนต์ท้ายบรรทัด ทุกคอมเมนต์ต้องอยู่บรรทัดของตัวเอง
+# รหัสผ่าน DB ของแต่ละเครื่อง/เซิร์ฟเวอร์ — ใช้ api/config.example.php เป็นแม่แบบ
+api/config.php
+# รหัสผ่าน DirectAdmin/FTP
+hosting.txt
+api_key.txt
+
+# ---- ข้อมูลส่วนบุคคล: รูปเจ้าหน้าที่/นักแนะแนวตัวจริง ----
+api/images/
+
+# ---- ไฟล์ build / แพ็กเกจ deploy (สร้างใหม่ได้จาก npm run build) ----
+public/dcms/assets/
+public/dcms/index.html
+*.zip
+
+# ---- ไฟล์ทดสอบ/ชั่วคราวที่ไม่ควรอยู่ใน repo ----
+ex.pdf
+{
