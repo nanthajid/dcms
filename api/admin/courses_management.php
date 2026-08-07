@@ -10,6 +10,8 @@
  * แต่แบ่งคนไปคนละสถานที่ ถ้าบังคับให้เท่ากันหมดจะเก็บของจริงไม่ได้
  */
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 $action = $_GET['action'] ?? '';
 

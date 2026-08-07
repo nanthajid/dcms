@@ -56,7 +56,13 @@ const AdminLayout: React.FC = () => {
     setOpenSubmenus(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // ล้าง session ฝั่งเซิร์ฟเวอร์ด้วย ไม่งั้น cookie เดิมยังเรียก api/admin/ ได้ต่อ
+    try {
+      await axios.post('/dcms/api/logout.php');
+    } catch {
+      // ยิงไม่ผ่านก็ยังต้องออกจากระบบฝั่งนี้ให้ผู้ใช้
+    }
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     navigate('/admin/login');

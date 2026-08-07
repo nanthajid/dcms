@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 require_once __DIR__ . '/user_types_lib.php';
 
 // Change to $_POST because we are sending FormData

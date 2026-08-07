@@ -1,8 +1,17 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 require_once __DIR__ . '/user_types_lib.php';
 
 $action = $_GET['action'] ?? 'get';
+
+// คำสั่งที่แก้ระบบสิทธิ์เอง ต้องเป็น admin เท่านั้น
+// โดยเฉพาะ update_user_types ที่ตั้ง user_type ของใครก็ได้ = ยกตัวเองเป็น admin ได้
+// ปุ่มบนหน้าจอซ่อนไว้แล้วก็จริง แต่ซ่อนปุ่มไม่ได้กันคนยิง API ตรง
+if (in_array($action, ['save', 'add_type', 'delete_type', 'update_user_types'], true)) {
+    requireSuperuser();
+}
 
 try {
     ensureUserTypeSchema($conn);

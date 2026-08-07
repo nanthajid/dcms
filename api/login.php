@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'auth.php';
 
 // Handle preflight OPTIONS request handled in config.php
 
@@ -38,20 +39,26 @@ if (!empty($data->username) && !empty($data->password)) {
                 }
 
                 if (in_array($row['user_type'], $allowedTypes, true)) {
-                    // Use a more compatible way to generate a token
+                    $user = [
+                        "id" => $row['id'],
+                        "username" => $row['username'],
+                        "fullname" => $row['fullname'],
+                        "user_type" => $row['user_type'],
+                        "StID" => $row['StID'] ?? null
+                    ];
+
+                    // ตัวจริงที่ใช้ตรวจสิทธิ์คือ session ฝั่งเซิร์ฟเวอร์
+                    loginUser($user);
+
+                    // token ยังส่งให้อยู่เพราะหน้าเว็บใช้เป็นสัญญาณว่าล็อกอินแล้ว
+                    // แต่ไม่ได้ใช้ตรวจสิทธิ์อีกต่อไป (ของเดิมสุ่มทิ้งเฉย ๆ ตรวจอะไรไม่ได้)
                     $token = bin2hex(openssl_random_pseudo_bytes(16));
                     if (!$token) $token = md5(uniqid(rand(), true));
 
                     echo json_encode([
                         "success" => true,
-                        "token" => $token, 
-                        "user" => [
-                            "id" => $row['id'],
-                            "username" => $row['username'],
-                            "fullname" => $row['fullname'],
-                            "user_type" => $row['user_type'],
-                            "StID" => $row['StID'] ?? null
-                        ]
+                        "token" => $token,
+                        "user" => $user
                     ]);
                 } else {
                     echo json_encode(["success" => false, "message" => "คุณไม่มีสิทธิ์เข้าถึงระบบจัดการ"]);

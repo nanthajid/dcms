@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 require_once __DIR__ . '/work_rate_config.php';
 
 $action = $_GET['action'] ?? '';
