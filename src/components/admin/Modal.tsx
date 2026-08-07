@@ -36,15 +36,63 @@ const SIZES: Record<ModalSize, string> = {
   full: 'max-w-5xl',
 };
 
+/**
+ * โทนสีต่อ variant
+ * - accent   แถบบางบนสุดของ modal บอกประเภทตั้งแต่แรกเห็น
+ * - tint     ไล่สีจาง ๆ ของ header ไม่ให้เป็นแผ่นขาวโล่ง
+ * - glow     วงกลมเบลอหลังไอคอน เพิ่มมิติให้หัว modal
+ */
 const VARIANTS: Record<
   ModalVariant,
-  { icon: React.ElementType; iconClass: string; ring: string }
+  {
+    icon: React.ElementType;
+    iconClass: string;
+    ring: string;
+    accent: string;
+    tint: string;
+    glow: string;
+  }
 > = {
-  default: { icon: Info, iconClass: 'text-primary bg-primary/10', ring: 'ring-primary/15' },
-  info: { icon: Info, iconClass: 'text-blue-600 bg-blue-50', ring: 'ring-blue-500/15' },
-  success: { icon: CheckCircle2, iconClass: 'text-emerald-600 bg-emerald-50', ring: 'ring-emerald-500/15' },
-  warning: { icon: AlertTriangle, iconClass: 'text-amber-600 bg-amber-50', ring: 'ring-amber-500/15' },
-  error: { icon: XCircle, iconClass: 'text-rose-600 bg-rose-50', ring: 'ring-rose-500/15' },
+  default: {
+    icon: Info,
+    iconClass: 'text-primary bg-white',
+    ring: 'ring-primary/10',
+    accent: 'from-primary via-primary/90 to-primary/50',
+    tint: 'from-primary/[0.10] via-primary/[0.04] to-transparent',
+    glow: 'bg-primary/20',
+  },
+  info: {
+    icon: Info,
+    iconClass: 'text-blue-600 bg-white',
+    ring: 'ring-blue-500/10',
+    accent: 'from-blue-600 via-blue-500/90 to-blue-400/50',
+    tint: 'from-blue-500/[0.10] via-blue-500/[0.04] to-transparent',
+    glow: 'bg-blue-400/25',
+  },
+  success: {
+    icon: CheckCircle2,
+    iconClass: 'text-emerald-600 bg-white',
+    ring: 'ring-emerald-500/10',
+    accent: 'from-emerald-600 via-emerald-500/90 to-emerald-400/50',
+    tint: 'from-emerald-500/[0.10] via-emerald-500/[0.04] to-transparent',
+    glow: 'bg-emerald-400/25',
+  },
+  warning: {
+    icon: AlertTriangle,
+    iconClass: 'text-amber-600 bg-white',
+    ring: 'ring-amber-500/10',
+    accent: 'from-amber-500 via-amber-400/90 to-amber-300/50',
+    tint: 'from-amber-500/[0.12] via-amber-500/[0.04] to-transparent',
+    glow: 'bg-amber-400/25',
+  },
+  error: {
+    icon: XCircle,
+    iconClass: 'text-rose-600 bg-white',
+    ring: 'ring-rose-500/10',
+    accent: 'from-rose-600 via-rose-500/90 to-rose-400/50',
+    tint: 'from-rose-500/[0.10] via-rose-500/[0.04] to-transparent',
+    glow: 'bg-rose-400/25',
+  },
 };
 
 export interface ModalAction {
@@ -225,43 +273,67 @@ const Modal: React.FC<ModalProps> = ({
                     flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl
                     ring-1 ring-black/5 outline-none`}
       >
+        {/* แถบบางบนสุด บอกประเภท modal ตั้งแต่แรกเห็นโดยไม่ต้องอ่านข้อความ */}
+        <div
+          className={`h-1 w-full flex-shrink-0 bg-gradient-to-r ${v.accent}`}
+          aria-hidden="true"
+        />
+
         {/* ---------- Header ---------- */}
-        <header className="flex items-start gap-4 px-6 py-5 border-b border-gray-100">
+        <header
+          className={`relative flex-shrink-0 overflow-hidden border-b border-gray-100
+                      bg-gradient-to-br ${v.tint}`}
+        >
+          {/* วงกลมเบลอหลังไอคอน ให้หัวมีมิติแทนที่จะเป็นแผ่นสีเรียบ */}
           <div
-            className={`dcms-modal-icon flex-shrink-0 grid place-items-center
-                        w-11 h-11 rounded-xl ring-4 ${v.ring} ${v.iconClass}`}
-          >
-            <Icon size={20} strokeWidth={2} aria-hidden="true" />
-          </div>
+            className={`pointer-events-none absolute -left-8 -top-14 h-36 w-36 rounded-full
+                        blur-3xl opacity-60 ${v.glow}`}
+            aria-hidden="true"
+          />
+          {/* ลายเส้นทแยงฝั่งขวา ที่ที่ไม่มีข้อความ */}
+          <div
+            className="dcms-modal-header-deco pointer-events-none absolute inset-y-0 right-0 w-1/2"
+            aria-hidden="true"
+          />
 
-          <div className="min-w-0 flex-1">
-            <h2
-              id={titleId}
-              className="text-lg font-bold text-gray-800 leading-snug truncate"
+          <div className="relative flex items-start gap-4 px-6 py-5">
+            <div
+              className={`dcms-modal-icon flex-shrink-0 grid place-items-center
+                          w-11 h-11 rounded-xl shadow-sm ring-4 ${v.ring} ${v.iconClass}`}
             >
-              {title}
-            </h2>
-            {subtitle && (
-              <p
-                id={descId}
-                className="text-sm text-gray-500 mt-0.5 leading-relaxed"
-              >
-                {subtitle}
-              </p>
-            )}
-          </div>
+              <Icon size={20} strokeWidth={2} aria-hidden="true" />
+            </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="ปิดหน้าต่าง"
-            className="dcms-modal-close flex-shrink-0 p-2 -m-1 rounded-lg text-gray-400
-                       hover:text-gray-600 hover:bg-gray-100 active:scale-95
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                       transition-all duration-200"
-          >
-            <X size={20} />
-          </button>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <h2
+                id={titleId}
+                className="text-lg font-bold text-gray-800 leading-snug truncate"
+              >
+                {title}
+              </h2>
+              {subtitle && (
+                <p
+                  id={descId}
+                  className="text-sm text-gray-500 mt-1 leading-relaxed"
+                >
+                  {subtitle}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="ปิดหน้าต่าง"
+              className="dcms-modal-close flex-shrink-0 grid place-items-center h-9 w-9 rounded-lg
+                         bg-white/70 text-gray-400 ring-1 ring-black/5 backdrop-blur-sm
+                         hover:bg-white hover:text-gray-600 hover:ring-black/10 active:scale-95
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+                         transition-all duration-200"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </header>
 
         {/* ---------- Body ---------- */}
@@ -280,11 +352,19 @@ const Modal: React.FC<ModalProps> = ({
           {loading ? <ModalSkeleton /> : children}
         </div>
 
-        {/* ---------- Footer ---------- */}
+        {/* ---------- Footer ----------
+            พื้นเทาอ่อนกว่า body ทำให้แถบปุ่มดู "จม" ลงไปหนึ่งชั้น
+            สายตาแยกโซนเนื้อหากับโซนตัดสินใจออกจากกันได้ทันที */}
         {(footer || hasDefaultFooter) && (
           <footer
-            className="flex-shrink-0 border-t border-gray-100 px-6 py-4"
+            className="relative flex-shrink-0 border-t border-gray-100 px-6 py-4
+                       bg-gradient-to-b from-gray-50/80 to-gray-100/60"
           >
+            {/* เส้นสว่างบาง ๆ ใต้ขอบบน ช่วยให้รอยต่อดูคมขึ้นแบบ inset */}
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80"
+              aria-hidden="true"
+            />
             {footer ?? (
               <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
                 {textLink && (

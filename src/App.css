@@ -17,6 +17,18 @@
   to   { opacity: 0; transform: translateY(4px) scale(0.98); }
 }
 
+/* ลายเส้นทแยงบาง ๆ มุมขวาของ header กันไม่ให้ฝั่งที่ไม่มีข้อความดูโล่ง
+   mask ทำให้ค่อย ๆ จางหายก่อนถึงข้อความ จะได้ไม่กวนสายตาตอนอ่าน */
+.dcms-modal-header-deco {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(15 23 42 / 0.05) 0 1px,
+    transparent 1px 9px
+  );
+  -webkit-mask-image: linear-gradient(to left, rgb(0 0 0 / 0.85), transparent 62%);
+  mask-image: linear-gradient(to left, rgb(0 0 0 / 0.85), transparent 62%);
+}
+
 .dcms-modal-overlay--open    { animation: dcmsOverlayIn  200ms ease-out both; }
 .dcms-modal-overlay--closing { animation: dcmsOverlayOut 200ms ease-in  both; }
 
