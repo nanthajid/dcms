@@ -20,7 +20,26 @@ import {
   X,
   FileText,
   Upload,
+  ChevronUp,
+  ChevronsUpDown,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronLeft,
 } from 'lucide-react';
+import {
+  createColumnHelper,
+  flexRender,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getExpandedRowModel,
+  getPaginationRowModel,
+  type SortingState,
+  type ColumnFiltersState,
+  type ExpandedState,
+  type FilterFn,
+} from '@tanstack/react-table';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import ThaiDatePicker from '../../components/admin/ThaiDatePicker';
 import Modal, { ModalEmptyState } from '../../components/admin/Modal';
@@ -134,10 +153,24 @@ const CourseManagement: React.FC = () => {
   const [places, setPlaces] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [urgentFilter, setUrgentFilter] = useState('all');
-  const [yearFilter, setYearFilter] = useState('all');
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  // สถานะของตารางให้ TanStack Table คุมทั้งหมด — ค้นหา/กรอง/เรียง/แบ่งหน้า/ขยายแถว
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  /** อ่าน/เขียนค่าใน columnFilters ผ่าน dropdown — 'all' = ไม่กรองคอลัมน์นั้น */
+  const filterValue = (id: string) =>
+    (columnFilters.find(f => f.id === id)?.value as string) ?? 'all';
+
+  const setFilter = (id: string, value: string) => {
+    setColumnFilters(prev => {
+      const rest = prev.filter(f => f.id !== id);
+      return value === 'all' ? rest : [...rest, { id, value }];
+    });
+    setPagination(p => ({ ...p, pageIndex: 0 }));   // กรองใหม่แล้วต้องกลับหน้าแรก
+  };
 
   const [permissions, setPermissions] = useState<MenuPermissions>(DEFAULT_PERMISSIONS);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
@@ -219,31 +252,6 @@ const CourseManagement: React.FC = () => {
     });
     return Array.from(set).sort().reverse();
   }, [courses]);
-
-  const filtered = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    return courses.filter(c => {
-      const matchSearch =
-        !q ||
-        c.CourseName.toLowerCase().includes(q) ||
-        (c.AddID || '').toLowerCase().includes(q) ||
-        (c.TrOrganization || '').toLowerCase().includes(q) ||
-        (c.TrPlace || '').toLowerCase().includes(q) ||
-        c.attendees.some(a => (a.StName || '').toLowerCase().includes(q));
-
-      const matchUrgent = urgentFilter === 'all' || c.Urgent === urgentFilter;
-      const matchYear =
-        yearFilter === 'all' ||
-        (c.TrDateFrom && String(new Date(c.TrDateFrom).getFullYear() + 543) === yearFilter);
-
-      return matchSearch && matchUrgent && matchYear;
-    });
-  }, [courses, searchTerm, urgentFilter, yearFilter]);
-
-  const totalAttendees = useMemo(
-    () => filtered.reduce((sum, c) => sum + c.attendees.length, 0),
-    [filtered]
-  );
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM });
@@ -413,6 +421,188 @@ const CourseManagement: React.FC = () => {
     );
   }, [staffOptions, staffSearch]);
 
+  /* ---------------- TanStack Table ---------------- */
+
+  const columnHelper = createColumnHelper<Course>();
+
+  const columns = useMemo(
+    () => [
+      columnHelper.display({
+        id: 'expander',
+        header: () => null,
+        meta: { cellClass: 'px-4 py-5 w-10' },
+        cell: ({ row }) => (
+          <button
+            onClick={row.getToggleExpandedHandler()}
+            aria-expanded={row.getIsExpanded()}
+            className="p-1 text-gray-400 hover:text-primary rounded-lg hover:bg-white transition-colors"
+            title={row.getIsExpanded() ? 'ย่อรายชื่อ' : 'ดูรายชื่อผู้เข้าอบรม'}
+          >
+            {row.getIsExpanded() ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </button>
+        ),
+      }),
+
+      // accessor คืนเป็นสตริง '' เมื่อไม่มีวันที่ ไม่ใช่ null
+      // เพราะ null ทำให้ตัวเรียงของ TanStack สลับที่ไปมาไม่คงที่
+      columnHelper.accessor(row => row.TrDateFrom ?? '', {
+        id: 'TrDateFrom',
+        header: 'วันที่อบรม',
+        meta: { cellClass: 'px-4 py-5 whitespace-nowrap align-top' },
+        cell: ({ row }) => (
+          <>
+            <div className="flex items-center gap-2 font-bold text-gray-800">
+              <Calendar size={15} className="text-gray-400 flex-shrink-0" />
+              {dateRange(row.original.TrDateFrom, row.original.TrDateTo)}
+            </div>
+            <div className="mt-1.5">{urgentBadge(row.original.Urgent)}</div>
+          </>
+        ),
+      }),
+
+      columnHelper.accessor('CourseName', {
+        header: 'หลักสูตร / เรื่อง',
+        meta: { cellClass: 'px-4 py-5 max-w-md align-top' },
+        cell: ({ row }) => (
+          <>
+            <div className="font-semibold text-gray-800 leading-snug">
+              {row.original.CourseName}
+            </div>
+            {row.original.AddID && (
+              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <FileText size={12} />
+                {row.original.AddID}
+                {row.original.RDate && (
+                  <span className="text-gray-400">· รับ {thaiDate(row.original.RDate)}</span>
+                )}
+              </div>
+            )}
+          </>
+        ),
+      }),
+
+      columnHelper.accessor(row => row.TrOrganization ?? '', {
+        id: 'TrOrganization',
+        header: 'หน่วยงาน / สถานที่',
+        meta: { cellClass: 'px-4 py-5 text-sm max-w-xs align-top' },
+        cell: ({ row }) => (
+          <>
+            {row.original.TrOrganization && (
+              <div className="flex items-start gap-1.5 text-gray-700">
+                <Building2 size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <span>{row.original.TrOrganization}</span>
+              </div>
+            )}
+            {row.original.TrPlace && (
+              <div className="flex items-start gap-1.5 text-gray-500 mt-1">
+                <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <span>{row.original.TrPlace}</span>
+              </div>
+            )}
+          </>
+        ),
+      }),
+
+      columnHelper.accessor(row => row.attendees.length, {
+        id: 'attendeeCount',
+        header: 'ผู้เข้าอบรม',
+        meta: { cellClass: 'px-4 py-5 text-center align-top' },
+        cell: ({ getValue }) => (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-primary rounded-full text-sm font-bold">
+            <Users size={14} />
+            {getValue()}
+          </span>
+        ),
+      }),
+
+      columnHelper.display({
+        id: 'actions',
+        header: 'เครื่องมือ',
+        meta: { cellClass: 'px-4 py-5 text-right align-top' },
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-1">
+            {canEdit && (
+              <button
+                onClick={() => openEdit(row.original)}
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="แก้ไขหลักสูตร"
+              >
+                <Pencil size={18} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => handleDelete(row.original)}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="ลบหลักสูตร"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </div>
+        ),
+      }),
+
+      // สองคอลัมน์นี้ซ่อนไว้ มีไว้ให้ dropdown ด้านบนกรองเท่านั้น
+      // TanStack กรองคอลัมน์ที่ซ่อนอยู่ได้ จึงไม่ต้องแยก logic ออกไปกรองเอง
+      columnHelper.accessor('Urgent', {
+        id: 'Urgent',
+        enableSorting: false,
+      }),
+      columnHelper.accessor(
+        row => (row.TrDateFrom ? String(new Date(row.TrDateFrom).getFullYear() + 543) : ''),
+        { id: 'trYear', enableSorting: false }
+      ),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canEdit, canDelete]
+  );
+
+  /**
+   * ค้นหารวม — ต้องเขียนเองเพราะต้องมองเข้าไปถึงชื่อผู้เข้าอบรมในแถวลูก
+   * ตัวกรองมาตรฐานของ TanStack ดูได้แค่ค่าในคอลัมน์ที่ประกาศไว้
+   */
+  const globalFilterFn: FilterFn<Course> = (row, _columnId, value) => {
+    const q = String(value ?? '').trim().toLowerCase();
+    if (!q) return true;
+    const c = row.original;
+    return (
+      c.CourseName.toLowerCase().includes(q) ||
+      (c.AddID || '').toLowerCase().includes(q) ||
+      (c.TrOrganization || '').toLowerCase().includes(q) ||
+      (c.TrPlace || '').toLowerCase().includes(q) ||
+      c.attendees.some(a => (a.StName || '').toLowerCase().includes(q))
+    );
+  };
+
+  const table = useReactTable({
+    data: courses,
+    columns,
+    state: { sorting, columnFilters, globalFilter, expanded, pagination },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onExpandedChange: setExpanded,
+    onPaginationChange: setPagination,
+    globalFilterFn,
+    getRowId: row => String(row.id),
+    getRowCanExpand: () => true,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { columnVisibility: { Urgent: false, trYear: false } },
+  });
+
+  const filteredRows = table.getFilteredRowModel().rows;
+  const totalAttendees = filteredRows.reduce((sum, r) => sum + r.original.attendees.length, 0);
+  const totalCertificates = filteredRows.reduce(
+    (sum, r) => sum + r.original.attendees.filter(a => a.Certificate).length,
+    0
+  );
+  const visibleColCount = table.getVisibleFlatColumns().length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -440,7 +630,7 @@ const CourseManagement: React.FC = () => {
             <GraduationCap size={22} />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-800">{filtered.length}</div>
+            <div className="text-2xl font-bold text-gray-800">{filteredRows.length}</div>
             <div className="text-xs text-gray-500 font-medium">หลักสูตร</div>
           </div>
         </div>
@@ -459,10 +649,7 @@ const CourseManagement: React.FC = () => {
           </div>
           <div>
             <div className="text-2xl font-bold text-gray-800">
-              {filtered.reduce(
-                (n, c) => n + c.attendees.filter(a => a.Certificate).length,
-                0
-              )}
+              {totalCertificates}
             </div>
             <div className="text-xs text-gray-500 font-medium">มีเกียรติบัตร</div>
           </div>
@@ -478,8 +665,11 @@ const CourseManagement: React.FC = () => {
           <input
             type="text"
             placeholder="ค้นหาชื่อหลักสูตร เลขที่หนังสือ หน่วยงาน หรือชื่อผู้เข้าอบรม..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            value={globalFilter}
+            onChange={e => {
+              setGlobalFilter(e.target.value);
+              setPagination(p => ({ ...p, pageIndex: 0 }));
+            }}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary bg-gray-50"
           />
         </div>
@@ -489,8 +679,8 @@ const CourseManagement: React.FC = () => {
               <Filter size={18} />
             </span>
             <select
-              value={urgentFilter}
-              onChange={e => setUrgentFilter(e.target.value)}
+              value={filterValue('Urgent')}
+              onChange={e => setFilter('Urgent', e.target.value)}
               className="pl-10 pr-8 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary bg-gray-50 appearance-none font-medium text-gray-700"
             >
               <option value="all">ทุกชั้นความเร็ว</option>
@@ -500,8 +690,8 @@ const CourseManagement: React.FC = () => {
             </select>
           </div>
           <select
-            value={yearFilter}
-            onChange={e => setYearFilter(e.target.value)}
+            value={filterValue('trYear')}
+            onChange={e => setFilter('trYear', e.target.value)}
             className="px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary bg-gray-50 appearance-none font-medium text-gray-700"
           >
             <option value="all">ทุกปี</option>
@@ -526,26 +716,60 @@ const CourseManagement: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 text-gray-600 text-xs uppercase tracking-wider font-bold">
-                <th className="px-4 py-4 border-b border-gray-100 w-10"></th>
-                <th className="px-4 py-4 border-b border-gray-100">วันที่อบรม</th>
-                <th className="px-4 py-4 border-b border-gray-100">หลักสูตร / เรื่อง</th>
-                <th className="px-4 py-4 border-b border-gray-100">หน่วยงาน / สถานที่</th>
-                <th className="px-4 py-4 border-b border-gray-100 text-center">ผู้เข้าอบรม</th>
-                <th className="px-4 py-4 border-b border-gray-100 text-right">เครื่องมือ</th>
-              </tr>
+              {table.getHeaderGroups().map(hg => (
+                <tr
+                  key={hg.id}
+                  className="bg-gray-50/50 text-gray-600 text-xs uppercase tracking-wider font-bold"
+                >
+                  {hg.headers.map(header => {
+                    const align =
+                      header.column.id === 'attendeeCount'
+                        ? 'text-center'
+                        : header.column.id === 'actions'
+                        ? 'text-right'
+                        : '';
+                    return (
+                      <th
+                        key={header.id}
+                        className={`px-4 py-4 border-b border-gray-100 ${align} ${
+                          header.column.id === 'expander' ? 'w-10' : ''
+                        }`}
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <button
+                            onClick={header.column.getToggleSortingHandler()}
+                            className="inline-flex items-center gap-1 hover:text-primary transition-colors uppercase tracking-wider"
+                            title="คลิกเพื่อเรียงลำดับ"
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {/* ไอคอนจาง ๆ ตอนยังไม่เรียง บอกว่าหัวคอลัมน์นี้กดได้ */}
+                            {{
+                              asc: <ChevronUp size={13} />,
+                              desc: <ChevronDown size={13} />,
+                            }[header.column.getIsSorted() as string] ?? (
+                              <ChevronsUpDown size={13} className="text-gray-300" />
+                            )}
+                          </button>
+                        ) : (
+                          flexRender(header.column.columnDef.header, header.getContext())
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              ))}
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-20 text-center">
+                  <td colSpan={visibleColCount} className="py-20 text-center">
                     <Loader2 className="animate-spin text-primary mx-auto mb-2" size={32} />
                     <p className="text-gray-400 font-medium">กำลังโหลดข้อมูลการฝึกอบรม...</p>
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-20 text-center">
+                  <td colSpan={visibleColCount} className="py-20 text-center">
                     <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <GraduationCap className="w-10 h-10 text-gray-300" />
                     </div>
@@ -558,87 +782,28 @@ const CourseManagement: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filtered.map(c => (
-                  <React.Fragment key={c.id}>
+                table.getRowModel().rows.map(row => {
+                  const c = row.original;
+                  return (
+                  <React.Fragment key={row.id}>
                     <tr className="hover:bg-blue-50/30 transition-colors group align-top">
-                      <td className="px-4 py-5">
-                        <button
-                          onClick={() =>
-                            setExpanded(prev => ({ ...prev, [c.id]: !prev[c.id] }))
+                      {row.getVisibleCells().map(cell => (
+                        <td
+                          key={cell.id}
+                          className={
+                            (cell.column.columnDef.meta as { cellClass?: string } | undefined)
+                              ?.cellClass ?? 'px-4 py-5'
                           }
-                          className="p-1 text-gray-400 hover:text-primary rounded-lg hover:bg-white transition-colors"
-                          title={expanded[c.id] ? 'ย่อรายชื่อ' : 'ดูรายชื่อผู้เข้าอบรม'}
                         >
-                          {expanded[c.id] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                        </button>
-                      </td>
-                      <td className="px-4 py-5 whitespace-nowrap">
-                        <div className="flex items-center gap-2 font-bold text-gray-800">
-                          <Calendar size={15} className="text-gray-400 flex-shrink-0" />
-                          {dateRange(c.TrDateFrom, c.TrDateTo)}
-                        </div>
-                        <div className="mt-1.5">{urgentBadge(c.Urgent)}</div>
-                      </td>
-                      <td className="px-4 py-5 max-w-md">
-                        <div className="font-semibold text-gray-800 leading-snug">
-                          {c.CourseName}
-                        </div>
-                        {c.AddID && (
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                            <FileText size={12} />
-                            {c.AddID}
-                            {c.RDate && <span className="text-gray-400">· รับ {thaiDate(c.RDate)}</span>}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-5 text-sm max-w-xs">
-                        {c.TrOrganization && (
-                          <div className="flex items-start gap-1.5 text-gray-700">
-                            <Building2 size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                            <span>{c.TrOrganization}</span>
-                          </div>
-                        )}
-                        {c.TrPlace && (
-                          <div className="flex items-start gap-1.5 text-gray-500 mt-1">
-                            <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                            <span>{c.TrPlace}</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-5 text-center">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-primary rounded-full text-sm font-bold">
-                          <Users size={14} />
-                          {c.attendees.length}
-                        </span>
-                      </td>
-                      <td className="px-4 py-5 text-right">
-                        <div className="flex justify-end gap-1">
-                          {canEdit && (
-                            <button
-                              onClick={() => openEdit(c)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="แก้ไขหลักสูตร"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => handleDelete(c)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="ลบหลักสูตร"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
                     </tr>
 
-                    {expanded[c.id] && (
+                    {row.getIsExpanded() && (
                       <tr className="bg-slate-50/60">
                         <td></td>
-                        <td colSpan={5} className="px-4 py-4">
+                        <td colSpan={visibleColCount - 1} className="px-4 py-4">
                           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                             ผู้เข้าอบรม {c.attendees.length} คน
                           </div>
@@ -692,11 +857,81 @@ const CourseManagement: React.FC = () => {
                       </tr>
                     )}
                   </React.Fragment>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+
+        {/* แบ่งหน้า — ซ่อนเมื่อข้อมูลไม่ถึงหนึ่งหน้า จะได้ไม่รกโดยเปล่าประโยชน์ */}
+        {!loading && filteredRows.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center gap-3 text-sm text-gray-500">
+              <span>
+                แสดง{' '}
+                <span className="font-bold text-gray-700">
+                  {table.getRowModel().rows.length}
+                </span>{' '}
+                จาก{' '}
+                <span className="font-bold text-gray-700">{filteredRows.length}</span> หลักสูตร
+              </span>
+              <select
+                value={pagination.pageSize}
+                onChange={e =>
+                  setPagination({ pageIndex: 0, pageSize: Number(e.target.value) })
+                }
+                className="px-2 py-1 border border-gray-200 rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-primary"
+              >
+                {[10, 25, 50, 100].map(n => (
+                  <option key={n} value={n}>
+                    {n} แถว
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {table.getPageCount() > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="หน้าแรก"
+                >
+                  <ChevronsLeft size={16} />
+                </button>
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="ก่อนหน้า"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="px-3 text-sm font-medium text-gray-600">
+                  {pagination.pageIndex + 1} / {table.getPageCount()}
+                </span>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="ถัดไป"
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  title="หน้าสุดท้าย"
+                >
+                  <ChevronsRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ฟอร์มเพิ่ม/แก้ไข — โครง modal มาจาก components/admin/Modal */}
