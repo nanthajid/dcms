@@ -19,6 +19,7 @@ import {
   Award,
   X,
   FileText,
+  Upload,
 } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import ThaiDatePicker from '../../components/admin/ThaiDatePicker';
@@ -95,6 +96,19 @@ const dateRange = (from: string | null, to: string | null) => {
   return `${thaiDate(from)} - ${thaiDate(to)}`;
 };
 
+/**
+ * คอลัมน์ Certificate เก็บได้ 2 แบบ
+ * - URL ภายนอก (ข้อมูลเดิมเป็นลิงก์ Google Drive)
+ * - path ของไฟล์ที่อัปโหลดเอง เช่น api/uploads/certificates/cert_xxx.pdf
+ */
+const certificateUrl = (v: string | null): string =>
+  !v ? '' : /^https?:\/\//i.test(v) ? v : `/dcms/${v}`;
+
+const isUploadedFile = (v: string | null): boolean => !!v && !/^https?:\/\//i.test(v);
+
+const CERT_ACCEPT = '.pdf,.png,.jpg,.jpeg';
+const CERT_MAX_SIZE = 10 * 1024 * 1024;
+
 const urgentBadge = (urgent: string) => {
   const style =
     urgent === 'ด่วนที่สุด'
@@ -133,6 +147,7 @@ const CourseManagement: React.FC = () => {
   const [selected, setSelected] = useState<Attendee[]>([]);
   const [staffSearch, setStaffSearch] = useState('');
   const [formError, setFormError] = useState('');
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -279,6 +294,41 @@ const CourseManagement: React.FC = () => {
     setSelected(prev =>
       prev.map(a => (a.StID === stid ? { ...a, [field]: value === '' ? null : value } : a))
     );
+  };
+
+  /**
+   * อัปโหลดทันทีที่เลือกไฟล์ แล้วเก็บแค่ path ไว้ในฟอร์ม
+   * ตัวไฟล์จะถูกผูกกับผู้เข้าอบรมจริงตอนกดบันทึกหลักสูตร
+   * (ตอนเพิ่มหลักสูตรใหม่ยังไม่มีแถวใน DB ให้ผูก จึงต้องแยกสองขั้นแบบนี้)
+   */
+  const handleCertUpload = async (stid: string, file: File) => {
+    if (!/\.(pdf|png|jpe?g)$/i.test(file.name)) {
+      toast.error('รองรับเฉพาะไฟล์ .pdf .png .jpg เท่านั้น');
+      return;
+    }
+    if (file.size > CERT_MAX_SIZE) {
+      toast.error(`ไฟล์ใหญ่เกิน 10 MB (ไฟล์นี้ ${(file.size / 1048576).toFixed(1)} MB)`);
+      return;
+    }
+
+    setUploading(prev => ({ ...prev, [stid]: true }));
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await axios.post('/dcms/api/admin/course_certificate_upload.php', fd);
+      if (res.data.success) {
+        updateAttendee(stid, 'Certificate', res.data.path);
+        toast.success(`อัปโหลด ${res.data.filename} สำเร็จ`);
+      } else {
+        toast.error(res.data.message || 'อัปโหลดไม่สำเร็จ');
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'อัปโหลดไม่สำเร็จ');
+    } finally {
+      setUploading(prev => ({ ...prev, [stid]: false }));
+    }
   };
 
   const handleSave = async () => {
@@ -617,11 +667,11 @@ const CourseManagement: React.FC = () => {
                                 </div>
                                 {a.Certificate && (
                                   <a
-                                    href={a.Certificate}
+                                    href={certificateUrl(a.Certificate)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors flex-shrink-0"
-                                    title="เปิดเกียรติบัตร"
+                                    title={isUploadedFile(a.Certificate) ? 'เปิดไฟล์เกียรติบัตร' : 'เปิดลิงก์เกียรติบัตร'}
                                   >
                                     <Award size={16} />
                                   </a>
@@ -908,13 +958,71 @@ const CourseManagement: React.FC = () => {
                               placeholder="สถานที่เฉพาะคนนี้ (ว่าง = ตามหลักสูตร)"
                               className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-gray-50"
                             />
-                            <input
-                              type="url"
-                              value={a.Certificate || ''}
-                              onChange={e => updateAttendee(a.StID, 'Certificate', e.target.value)}
-                              placeholder="ลิงก์เกียรติบัตร (ถ้ามี)"
-                              className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-gray-50"
-                            />
+                            {/* เกียรติบัตร: อัปโหลดไฟล์ หรือวางลิงก์ภายนอกก็ได้
+                                แสดงเป็นชิปเฉพาะไฟล์ที่อัปโหลดแล้ว ส่วนลิงก์ปล่อยให้พิมพ์ในช่องได้ตามปกติ
+                                ไม่งั้นพิมพ์ตัวแรกแล้วช่องจะหายไปทันที */}
+                            {isUploadedFile(a.Certificate) ? (
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                                <Award size={13} className="text-amber-600 flex-shrink-0" />
+                                <a
+                                  href={certificateUrl(a.Certificate)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] text-amber-700 hover:underline truncate flex-1 min-w-0"
+                                  title={a.Certificate ?? undefined}
+                                >
+                                  {a.Certificate?.split('/').pop()}
+                                </a>
+                                <button
+                                  onClick={() => updateAttendee(a.StID, 'Certificate', '')}
+                                  className="p-0.5 text-amber-400 hover:text-red-500 transition-colors flex-shrink-0"
+                                  title="เอาเกียรติบัตรออก"
+                                >
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                <label
+                                  className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-dashed rounded-lg text-[11px] font-medium transition-colors ${
+                                    uploading[a.StID]
+                                      ? 'border-gray-200 text-gray-400 cursor-wait'
+                                      : 'border-gray-300 text-gray-500 hover:border-primary hover:text-primary cursor-pointer'
+                                  }`}
+                                >
+                                  {uploading[a.StID] ? (
+                                    <>
+                                      <Loader2 size={13} className="animate-spin" />
+                                      กำลังอัปโหลด...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload size={13} />
+                                      อัปโหลดเกียรติบัตร (pdf, png, jpg)
+                                    </>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept={CERT_ACCEPT}
+                                    disabled={uploading[a.StID]}
+                                    className="hidden"
+                                    onChange={e => {
+                                      const f = e.target.files?.[0];
+                                      // ล้างค่า input ไว้ ไม่งั้นเลือกไฟล์เดิมซ้ำจะไม่ยิง onChange
+                                      e.target.value = '';
+                                      if (f) handleCertUpload(a.StID, f);
+                                    }}
+                                  />
+                                </label>
+                                <input
+                                  type="url"
+                                  value={a.Certificate || ''}
+                                  onChange={e => updateAttendee(a.StID, 'Certificate', e.target.value)}
+                                  placeholder="หรือวางลิงก์เกียรติบัตร"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-primary bg-gray-50"
+                                />
+                              </div>
+                            )}
                           </div>
                         ))
                       )}

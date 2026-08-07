@@ -42,3 +42,10 @@ public/dcms/index.html
 # ---- ไฟล์ทดสอบ/ชั่วคราวที่ไม่ควรอยู่ใน repo ----
 ex.pdf
 {
+
+# ---- ไฟล์ที่ผู้ใช้อัปโหลด (เกียรติบัตร ฯลฯ) ----
+api/uploads/*
+!api/uploads/certificates/
+api/uploads/certificates/*
+!api/uploads/certificates/.htaccess
+!api/uploads/certificates/.gitkeep

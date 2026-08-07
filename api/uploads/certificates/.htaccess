@@ -1,0 +1,4 @@
+# โฟลเดอร์เก็บไฟล์ที่ผู้ใช้อัปโหลด — ห้ามรันเป็นสคริปต์เด็ดขาด
+php_flag engine off
+Options -ExecCGI
+AddType text/plain .php .phtml .php5 .php7 .phar
