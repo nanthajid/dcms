@@ -1,2 +1,147 @@
 /* Standard Tailwind directives are in index.css */
 /* Add any global App-specific styles here if needed */
+
+/* ---- Modal กลาง (components/admin/Modal) -----------------------------
+   โปรเจกต์ไม่ได้ติดตั้ง tailwindcss-animate class animate-in/zoom-in-95
+   ที่ใช้อยู่เดิมจึงไม่มีผล ที่นี่เขียน keyframes เอง */
+
+@keyframes dcmsOverlayIn  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes dcmsOverlayOut { from { opacity: 1 } to { opacity: 0 } }
+
+@keyframes dcmsPanelIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+@keyframes dcmsPanelOut {
+  from { opacity: 1; transform: translateY(0)   scale(1);    }
+  to   { opacity: 0; transform: translateY(4px) scale(0.98); }
+}
+
+/* ลายเส้นทแยงบาง ๆ มุมขวาของ header กันไม่ให้ฝั่งที่ไม่มีข้อความดูโล่ง
+   mask ทำให้ค่อย ๆ จางหายก่อนถึงข้อความ จะได้ไม่กวนสายตาตอนอ่าน */
+.dcms-modal-header-deco {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(15 23 42 / 0.05) 0 1px,
+    transparent 1px 9px
+  );
+  -webkit-mask-image: linear-gradient(to left, rgb(0 0 0 / 0.85), transparent 62%);
+  mask-image: linear-gradient(to left, rgb(0 0 0 / 0.85), transparent 62%);
+}
+
+.dcms-modal-overlay--open    { animation: dcmsOverlayIn  200ms ease-out both; }
+.dcms-modal-overlay--closing { animation: dcmsOverlayOut 200ms ease-in  both; }
+
+/* cubic-bezier ตัวนี้เด้งขึ้นนิด ๆ ตอนเปิด ทำให้รู้สึกว่า modal "มา" ไม่ใช่แค่โผล่ */
+.dcms-modal-panel--open    { animation: dcmsPanelIn  240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dcms-modal-panel--closing { animation: dcmsPanelOut 200ms ease-in both; }
+
+/* ไอคอนหัว modal ขยับเบา ๆ ตามหลังกรอบ ให้สายตาไปหยุดที่ไอคอนก่อน */
+@keyframes dcmsIconPop {
+  from { opacity: 0; transform: scale(0.8) }
+  to   { opacity: 1; transform: scale(1)   }
+}
+.dcms-modal-icon { animation: dcmsIconPop 320ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
+.dcms-modal-icon svg { transition: transform 200ms ease; }
+.dcms-modal-panel:hover .dcms-modal-icon svg { transform: scale(1.06); }
+
+/* ข้อความ error ไหลลงมาแทนที่จะกระตุก */
+@keyframes dcmsAlertIn {
+  from { opacity: 0; transform: translateY(-4px); max-height: 0 }
+  to   { opacity: 1; transform: translateY(0);    max-height: 160px }
+}
+.dcms-modal-alert { animation: dcmsAlertIn 220ms ease-out both; }
+
+.dcms-modal-btn:active:not(:disabled) { transform: scale(0.97); }
+.dcms-modal-close:hover svg { transform: rotate(90deg); }
+.dcms-modal-close svg { transition: transform 200ms ease; }
+
+/* โครงหลอกระหว่างโหลด */
+@keyframes dcmsShimmer { to { background-position-x: -200% } }
+.dcms-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 40%, #e2e8f0 50%, #f1f5f9 60%);
+  background-size: 200% 100%;
+  animation: dcmsShimmer 1.4s linear infinite;
+}
+/* เคารพผู้ใช้ที่ตั้งค่าลดการเคลื่อนไหวไว้ในระบบ */
+@media (prefers-reduced-motion: reduce) {
+  .dcms-modal-overlay--open,
+  .dcms-modal-overlay--closing,
+  .dcms-modal-panel--open,
+  .dcms-modal-panel--closing,
+  .dcms-modal-icon,
+  .dcms-modal-alert,
+  .dcms-skeleton {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
+  .dcms-modal-btn:active:not(:disabled),
+  .dcms-modal-close:hover svg,
+  .dcms-modal-panel:hover .dcms-modal-icon svg {
+    transform: none;
+  }
+}
+
+/* ---- ปฏิทินไทย (components/admin/ThaiDatePicker) ----------------------
+   react-datepicker มาพร้อม CSS ของตัวเอง ปรับให้เข้ากับหน้าหลังบ้าน
+   (มุมมน ฟอนต์เดียวกับระบบ สีเลือกเป็น --color-primary) */
+
+/* ต้องสูงกว่า modal ที่ใช้ z-[200] ไม่งั้นปฏิทินโผล่อยู่ใต้ modal */
+.react-datepicker-popper {
+  z-index: 300;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border-color: #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+}
+
+.react-datepicker__header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+  padding-top: 0;
+}
+
+.react-datepicker__day-name {
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.react-datepicker__day {
+  border-radius: 0.5rem;
+}
+
+.react-datepicker__day:hover {
+  background-color: #eff6ff;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.react-datepicker__day--selected:hover {
+  background-color: var(--color-primary);
+}
+
+.react-datepicker__day--today {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.react-datepicker__day--outside-month {
+  color: #d1d5db;
+}
+
+/* input ของปฏิทินต้องกว้างเต็มช่องเหมือน input อื่นในฟอร์ม */
+.thai-datepicker .react-datepicker-wrapper,
+.thai-datepicker .react-datepicker__input-container {
+  display: block;
+  width: 100%;
+}

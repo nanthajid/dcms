@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 // Check if user is logged in and is admin/staff
 // In a real app, you'd verify the token here.

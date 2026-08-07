@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS `settings` (

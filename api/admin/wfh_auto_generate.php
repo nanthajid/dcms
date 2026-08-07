@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 // Action: auto_generate
 // Parameters: month, year

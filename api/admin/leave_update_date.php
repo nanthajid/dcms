@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 require_once __DIR__ . '/work_rate_config.php';
 
 $data = json_decode(file_get_contents("php://input"), true);

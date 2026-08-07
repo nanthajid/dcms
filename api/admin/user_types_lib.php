@@ -22,6 +22,7 @@ const MENU_KEYS = [
     'counselors',
     'appointments',
     'wfh',
+    'courses',
     'reports',
     'work-rates',
     'settings',
@@ -42,6 +43,9 @@ const ACTION_KEYS = [
     'staff.create',
     'staff.departments',
     'staff.usertypes',
+    'courses.create',
+    'courses.edit',
+    'courses.delete',
 ];
 
 // ปุ่มด้านบนหน้าข้อมูลเจ้าหน้าที่ ที่เดิมไม่เคยคุมสิทธิ์ (ใครเข้าหน้านี้ได้ก็เห็นหมด)

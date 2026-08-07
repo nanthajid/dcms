@@ -12,6 +12,7 @@ import CounselorManagement from './pages/admin/CounselorManagement';
 import StaffManagement from './pages/admin/StaffManagement';
 import LeaveManagement from './pages/admin/LeaveManagement';
 import WFHManagement from './pages/admin/WFHManagement';
+import CourseManagement from './pages/admin/CourseManagement';
 import OutsideWorkManagement from './pages/admin/OutsideWorkManagement';
 import OutsideWorkLeave from './pages/admin/OutsideWorkLeave';
 import OutsideWorkSpecialManagement from './pages/admin/OutsideWorkSpecialManagement';
@@ -70,6 +71,7 @@ function App() {
           <Route path="staff" element={<StaffManagement />} />
           <Route path="leave" element={<LeaveManagement />} />
           <Route path="wfh" element={<WFHManagement />} />
+          <Route path="courses" element={<CourseManagement />} />
           <Route path="outside-work" element={<OutsideWorkManagement />} />
           <Route path="outside-work-leave" element={<OutsideWorkLeave />} />
           <Route path="outside-work-special" element={<OutsideWorkSpecialManagement />} />

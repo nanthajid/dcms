@@ -1,19 +1,20 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->StID)) {
     try {
-        // In a real app, you would hash the password. 
-        // Following the current project style which seems to allow plain text or hash.
-        // We'll reset it to the StID as requested.
-        
+        // รหัสผ่านใหม่ = รหัสเจ้าหน้าที่ (ตามที่ระบบออกแบบไว้) แต่เก็บเป็น hash
+        $newPassword = hashPassword((string)$data->StID);
+
         $query = "UPDATE users SET password = :password WHERE StID = :StID";
         $stmt = $conn->prepare($query);
-        $stmt->bindParam(":password", $data->StID);
+        $stmt->bindParam(":password", $newPassword);
         $stmt->bindParam(":StID", $data->StID);
-        
+
         if ($stmt->execute()) {
             echo json_encode(["success" => true, "message" => "รีเซ็ตรหัสผ่านสำเร็จ (รหัสผ่านใหม่คือรหัสเจ้าหน้าที่)"]);
         } else {

@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 try {
     // 1. Add column StID and update user_type enum
@@ -26,8 +28,9 @@ try {
         $check->execute([$stid, $stid]);
         
         if ($check->rowCount() == 0) {
+            // รหัสผ่านเริ่มต้น = รหัสเจ้าหน้าที่ เก็บเป็น hash ไม่ใช่ข้อความตรง ๆ
             $stmt = $conn->prepare("INSERT INTO users (username, password, fullname, user_type, StID) VALUES (?, ?, ?, 'staff', ?)");
-            $stmt->execute([$stid, $stid, $name, $stid]);
+            $stmt->execute([$stid, hashPassword($stid), $name, $stid]);
             $count++;
         }
     }

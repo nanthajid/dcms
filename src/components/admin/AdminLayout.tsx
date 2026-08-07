@@ -15,7 +15,8 @@ import {
   Menu,
   BarChart2,
   Clock,
-  Coins
+  Coins,
+  GraduationCap
 } from 'lucide-react';
 
 interface MenuItem {
@@ -55,7 +56,13 @@ const AdminLayout: React.FC = () => {
     setOpenSubmenus(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // ล้าง session ฝั่งเซิร์ฟเวอร์ด้วย ไม่งั้น cookie เดิมยังเรียก api/admin/ ได้ต่อ
+    try {
+      await axios.post('/dcms/api/logout.php');
+    } catch {
+      // ยิงไม่ผ่านก็ยังต้องออกจากระบบฝั่งนี้ให้ผู้ใช้
+    }
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     navigate('/admin/login');
@@ -77,6 +84,7 @@ const AdminLayout: React.FC = () => {
     { icon: <Users size={20} />, menuKey: 'counselors', label: 'จัดการนักแนะแนว', path: '/admin/counselors', tooltip: 'จัดการข้อมูลนักแนะแนว' },
     { icon: <Calendar size={20} />, menuKey: 'appointments', label: 'การนัดหมาย', path: '/admin/appointments', tooltip: 'จัดการการนัดหมายกับนักศึกษา' },
     { icon: <HomeIcon size={20} />, menuKey: 'wfh', label: 'จัดการ WFH', path: '/admin/wfh', tooltip: 'จัดการการปฏิบัติงานจากบ้าน' },
+    { icon: <GraduationCap size={20} />, menuKey: 'courses', label: 'จัดการการฝึกอบรม', path: '/admin/courses', tooltip: 'บันทึกหลักสูตรฝึกอบรมและรายชื่อเจ้าหน้าที่ที่เข้าร่วม' },
     {
       icon: <BarChart2 size={20} />,
       menuKey: 'reports',

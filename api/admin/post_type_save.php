@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 // Get JSON data from request body
 $data = json_decode(file_get_contents("php://input"), true);

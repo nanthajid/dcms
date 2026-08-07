@@ -1,5 +1,7 @@
 <?php
 require_once '../config.php';
+require_once __DIR__ . '/../auth.php';
+requireAuth();
 
 try {
     $titles = $conn->query("SELECT TitleNo, Title FROM titles")->fetchAll(PDO::FETCH_ASSOC);
