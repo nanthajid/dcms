@@ -172,9 +172,10 @@ const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
+        {/* ปุ่มออกจากระบบย้ายไปอยู่มุมขวาบนของ navbar แล้ว ตรงนี้เหลือไว้บอกว่าใครล็อกอินอยู่ */}
         <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 mb-4 p-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold">
+          <div className="flex items-center gap-3 p-2">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold flex-shrink-0">
               {adminUser.fullname?.[0] || 'A'}
             </div>
             <div className="overflow-hidden">
@@ -182,13 +183,6 @@ const AdminLayout: React.FC = () => {
               <p className="text-xs text-slate-400">ผู้ดูแลระบบ</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-          >
-            <LogOut size={20} />
-            <span className="font-medium">ออกจากระบบ</span>
-          </button>
         </div>
       </aside>
 
@@ -199,8 +193,24 @@ const AdminLayout: React.FC = () => {
             <Menu className="md:hidden" />
             Panel Control
           </h1>
-          <div className="text-sm text-gray-500">
-            ระบบบริหารจัดการข้อมูล AR2Home
+          {/* มุมขวาบน = ที่ที่ผู้ใช้คาดว่าจะเจอปุ่มออกจากระบบ
+              จอแคบซ่อนข้อความไว้ เหลือแค่ไอคอน ปุ่มจึงไม่เบียดหัวข้อ */}
+          <div className="flex items-center gap-3">
+            <span className="hidden lg:block text-sm text-gray-500">
+              ระบบบริหารจัดการข้อมูล AR2Home
+            </span>
+            <span className="hidden lg:block h-6 w-px bg-gray-200" aria-hidden="true" />
+            <button
+              onClick={handleLogout}
+              title="ออกจากระบบ"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                         text-gray-500 hover:text-red-600 hover:bg-red-50 active:scale-95
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                         transition-all duration-200"
+            >
+              <LogOut size={18} />
+              <span className="hidden sm:inline">ออกจากระบบ</span>
+            </button>
           </div>
         </header>
         
