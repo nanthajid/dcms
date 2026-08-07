@@ -49,3 +49,6 @@ api/uploads/*
 api/uploads/certificates/*
 !api/uploads/certificates/.htaccess
 !api/uploads/certificates/.gitkeep
+
+# ภาพอ้างอิงงานออกแบบ เก็บไว้ในเครื่องพอ ไม่ต้องขึ้น repo
+modal.png

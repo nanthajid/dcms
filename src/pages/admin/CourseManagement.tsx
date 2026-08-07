@@ -987,6 +987,14 @@ const CourseManagement: React.FC = () => {
         }
         icon={GraduationCap}
         size="full"
+        tone="solid"
+        badge={form.id ? `#${form.id}` : 'ใหม่'}
+        hint={
+          <>
+            เลือกผู้เข้าอบรมจากช่องซ้าย · แนบเกียรติบัตรได้ทั้งไฟล์ pdf/png/jpg
+            และลิงก์ภายนอก
+          </>
+        }
         error={formError || null}
         // ฟอร์มนี้มีข้อมูลที่ยังไม่บันทึก เผลอคลิกพื้นหลังแล้วหายหมดจะเสียใจ
         closeOnBackdrop={false}
