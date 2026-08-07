@@ -110,9 +110,28 @@ const thaiDate = (d: string | null, long = false) => {
   });
 };
 
+/**
+ * ช่วงวันที่แบบกระชับ ไม่ให้ตกบรรทัดในตาราง
+ *   เดือนเดียวกัน  -> 15 - 16 มิ.ย. 2569
+ *   ปีเดียวกัน     -> 30 มิ.ย. - 2 ก.ค. 2569
+ *   ข้ามปี         -> 30 ธ.ค. 2569 - 2 ม.ค. 2570
+ */
 const dateRange = (from: string | null, to: string | null) => {
   if (!from) return '-';
   if (!to || to === from) return thaiDate(from);
+
+  const a = new Date(from);
+  const b = new Date(to);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return `${thaiDate(from)} - ${thaiDate(to)}`;
+
+  if (a.getFullYear() === b.getFullYear()) {
+    if (a.getMonth() === b.getMonth()) {
+      return `${a.getDate()} - ${thaiDate(to)}`;
+    }
+    // ตัดปีของวันแรกออก เพราะปีเดียวกันกับวันสุดท้ายอยู่แล้ว
+    const fromNoYear = a.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    return `${fromNoYear} - ${thaiDate(to)}`;
+  }
   return `${thaiDate(from)} - ${thaiDate(to)}`;
 };
 
@@ -430,7 +449,7 @@ const CourseManagement: React.FC = () => {
       columnHelper.display({
         id: 'expander',
         header: () => null,
-        meta: { cellClass: 'px-4 py-5 w-10' },
+        meta: { cellClass: 'pl-4 pr-1 py-4 align-top' },
         cell: ({ row }) => (
           <button
             onClick={row.getToggleExpandedHandler()}
@@ -448,24 +467,30 @@ const CourseManagement: React.FC = () => {
       columnHelper.accessor(row => row.TrDateFrom ?? '', {
         id: 'TrDateFrom',
         header: 'วันที่อบรม',
-        meta: { cellClass: 'px-4 py-5 whitespace-nowrap align-top' },
+        meta: { cellClass: 'px-5 py-4 align-top' },
         cell: ({ row }) => (
-          <>
-            <div className="flex items-center gap-2 font-bold text-gray-800">
-              <Calendar size={15} className="text-gray-400 flex-shrink-0" />
-              {dateRange(row.original.TrDateFrom, row.original.TrDateTo)}
+          <div className="space-y-1.5">
+            <div className="flex items-start gap-2 font-bold text-gray-800 text-[13px] leading-snug">
+              <Calendar size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
+              <span className="[word-break:keep-all]">
+                {dateRange(row.original.TrDateFrom, row.original.TrDateTo)}
+              </span>
             </div>
-            <div className="mt-1.5">{urgentBadge(row.original.Urgent)}</div>
-          </>
+            {urgentBadge(row.original.Urgent)}
+          </div>
         ),
       }),
 
       columnHelper.accessor('CourseName', {
         header: 'หลักสูตร / เรื่อง',
-        meta: { cellClass: 'px-4 py-5 max-w-md align-top' },
+        meta: { cellClass: 'px-5 py-4 align-top' },
         cell: ({ row }) => (
           <>
-            <div className="font-semibold text-gray-800 leading-snug">
+            {/* ตัด 2 บรรทัดให้ทุกแถวสูงเท่ากัน ชื่อเต็มดูได้จาก tooltip หรือกดขยายแถว */}
+            <div
+              className="font-semibold text-gray-800 leading-snug line-clamp-2"
+              title={row.original.CourseName}
+            >
               {row.original.CourseName}
             </div>
             {row.original.AddID && (
@@ -484,29 +509,35 @@ const CourseManagement: React.FC = () => {
       columnHelper.accessor(row => row.TrOrganization ?? '', {
         id: 'TrOrganization',
         header: 'หน่วยงาน / สถานที่',
-        meta: { cellClass: 'px-4 py-5 text-sm max-w-xs align-top' },
+        meta: { cellClass: 'px-5 py-4 text-[13px] align-top' },
         cell: ({ row }) => (
-          <>
+          <div className="space-y-1">
             {row.original.TrOrganization && (
-              <div className="flex items-start gap-1.5 text-gray-700">
-                <Building2 size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                <span>{row.original.TrOrganization}</span>
+              <div
+                className="flex items-center gap-1.5 text-gray-700"
+                title={row.original.TrOrganization}
+              >
+                <Building2 size={13} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate">{row.original.TrOrganization}</span>
               </div>
             )}
             {row.original.TrPlace && (
-              <div className="flex items-start gap-1.5 text-gray-500 mt-1">
-                <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                <span>{row.original.TrPlace}</span>
+              <div
+                className="flex items-center gap-1.5 text-gray-500"
+                title={row.original.TrPlace}
+              >
+                <MapPin size={13} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate">{row.original.TrPlace}</span>
               </div>
             )}
-          </>
+          </div>
         ),
       }),
 
       columnHelper.accessor(row => row.attendees.length, {
         id: 'attendeeCount',
         header: 'ผู้เข้าอบรม',
-        meta: { cellClass: 'px-4 py-5 text-center align-top' },
+        meta: { cellClass: 'px-3 py-4 text-center align-top' },
         cell: ({ getValue }) => (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-primary rounded-full text-sm font-bold">
             <Users size={14} />
@@ -518,7 +549,7 @@ const CourseManagement: React.FC = () => {
       columnHelper.display({
         id: 'actions',
         header: 'เครื่องมือ',
-        meta: { cellClass: 'px-4 py-5 text-right align-top' },
+        meta: { cellClass: 'px-4 py-4 text-right align-top' },
         cell: ({ row }) => (
           <div className="flex justify-end gap-1">
             {canEdit && (
@@ -714,12 +745,22 @@ const CourseManagement: React.FC = () => {
       {/* ตารางหลักสูตร */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          {/* table-fixed + colgroup: ไม่งั้นเบราว์เซอร์จัดความกว้างตามความยาวข้อความ
+              คอลัมน์ชื่อหลักสูตรจะกินพื้นที่จนคอลัมน์อื่นเบียดกัน */}
+          <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
+            <colgroup>
+              <col className="w-[44px]" />
+              <col className="w-[215px]" />
+              <col className="max-w-0" />
+              <col className="w-[260px]" />
+              <col className="w-[124px]" />
+              <col className="w-[100px]" />
+            </colgroup>
             <thead>
               {table.getHeaderGroups().map(hg => (
                 <tr
                   key={hg.id}
-                  className="bg-gray-50/50 text-gray-600 text-xs uppercase tracking-wider font-bold"
+                  className="bg-gray-50 text-gray-500 text-[11px] font-bold"
                 >
                   {hg.headers.map(header => {
                     const align =
@@ -731,14 +772,14 @@ const CourseManagement: React.FC = () => {
                     return (
                       <th
                         key={header.id}
-                        className={`px-4 py-4 border-b border-gray-100 ${align} ${
-                          header.column.id === 'expander' ? 'w-10' : ''
+                        className={`px-5 py-3 border-b border-gray-200 whitespace-nowrap ${align} ${
+                          header.column.id === 'expander' ? 'pl-4 pr-1' : ''
                         }`}
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <button
                             onClick={header.column.getToggleSortingHandler()}
-                            className="inline-flex items-center gap-1 hover:text-primary transition-colors uppercase tracking-wider"
+                            className="inline-flex items-center gap-1 hover:text-primary transition-colors"
                             title="คลิกเพื่อเรียงลำดับ"
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
@@ -759,7 +800,7 @@ const CourseManagement: React.FC = () => {
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
                   <td colSpan={visibleColCount} className="py-20 text-center">
@@ -786,7 +827,7 @@ const CourseManagement: React.FC = () => {
                   const c = row.original;
                   return (
                   <React.Fragment key={row.id}>
-                    <tr className="hover:bg-blue-50/30 transition-colors group align-top">
+                    <tr className="hover:bg-blue-50/40 transition-colors group align-top">
                       {row.getVisibleCells().map(cell => (
                         <td
                           key={cell.id}
