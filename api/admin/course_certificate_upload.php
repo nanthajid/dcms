@@ -39,12 +39,22 @@ if (!isset($_FILES['file'])) {
 $file = $_FILES['file'];
 
 if ($file['error'] !== UPLOAD_ERR_OK) {
-    $reason = match ($file['error']) {
-        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => "ไฟล์ใหญ่เกินกว่าที่เซิร์ฟเวอร์รับได้",
-        UPLOAD_ERR_PARTIAL                        => "อัปโหลดไม่สมบูรณ์ กรุณาลองใหม่",
-        UPLOAD_ERR_NO_FILE                        => "ไม่ได้เลือกไฟล์",
-        default                                   => "อัปโหลดไม่สำเร็จ (รหัส {$file['error']})",
-    };
+    // ใช้ switch ไม่ใช่ match เพราะ match มีเฉพาะ PHP 8
+    // เซิร์ฟเวอร์จริงเป็น PHP 7.4 ถ้าใช้ match จะ parse error ทั้งไฟล์ (500) ตั้งแต่ก่อนโค้ดรัน
+    switch ($file['error']) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            $reason = "ไฟล์ใหญ่เกินกว่าที่เซิร์ฟเวอร์รับได้";
+            break;
+        case UPLOAD_ERR_PARTIAL:
+            $reason = "อัปโหลดไม่สมบูรณ์ กรุณาลองใหม่";
+            break;
+        case UPLOAD_ERR_NO_FILE:
+            $reason = "ไม่ได้เลือกไฟล์";
+            break;
+        default:
+            $reason = "อัปโหลดไม่สำเร็จ (รหัส {$file['error']})";
+    }
     fail($reason);
 }
 

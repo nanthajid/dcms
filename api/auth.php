@@ -111,7 +111,17 @@ if (!function_exists('startAppSession')) {
     function looksHashed(?string $stored): bool
     {
         if ($stored === null || $stored === '') return false;
-        return password_get_info($stored)['algo'] !== null;
+
+        // ค่า algo ต่างกันตามเวอร์ชัน PHP:
+        //   PHP 8   คืนสตริง ('2y', 'argon2i') และ null เมื่อไม่ใช่ hash
+        //   PHP 7.4 คืน int  (1, 2, 3)         และ 0    เมื่อไม่ใช่ hash
+        // ถ้าเช็คแค่ !== null บน PHP 7.4 จะตัดสินว่ารหัสผ่าน plaintext เป็น hash
+        // แล้ว login.php จะไปเรียก password_verify กับข้อความธรรมดา = ล็อกอินไม่ได้เลย
+        $algo = password_get_info($stored)['algo'] ?? null;
+        if (!empty($algo)) return true;
+
+        // เผื่อ password_get_info ไม่รู้จักรูปแบบ แต่หน้าตาเป็น hash ที่ PHP รองรับ
+        return (bool) preg_match('/^\$(2[aby]|argon2(id|i|d))\$/', $stored);
     }
 
     /**
