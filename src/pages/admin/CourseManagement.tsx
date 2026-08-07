@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import ThaiDatePicker from '../../components/admin/ThaiDatePicker';
+import Modal, { ModalEmptyState } from '../../components/admin/Modal';
 import {
   DEFAULT_PERMISSIONS,
   isActionAllowed,
@@ -698,30 +699,30 @@ const CourseManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* ฟอร์มเพิ่ม/แก้ไข */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <GraduationCap size={20} className="text-primary" />
-                {form.id ? 'แก้ไขหลักสูตร' : 'เพิ่มหลักสูตรใหม่'}
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 space-y-5">
-              {formError && (
-                <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3 font-medium">
-                  {formError}
-                </div>
-              )}
-
+      {/* ฟอร์มเพิ่ม/แก้ไข — โครง modal มาจาก components/admin/Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={form.id ? 'แก้ไขหลักสูตร' : 'เพิ่มหลักสูตรใหม่'}
+        subtitle={
+          form.id
+            ? 'แก้ไขรายละเอียดหลักสูตรและรายชื่อผู้เข้าอบรม'
+            : 'กรอกข้อมูลหนังสือเชิญ แล้วเลือกเจ้าหน้าที่ที่เข้าร่วม'
+        }
+        icon={GraduationCap}
+        size="full"
+        error={formError || null}
+        // ฟอร์มนี้มีข้อมูลที่ยังไม่บันทึก เผลอคลิกพื้นหลังแล้วหายหมดจะเสียใจ
+        closeOnBackdrop={false}
+        primaryAction={{
+          label: form.id ? 'บันทึกการแก้ไข' : 'เพิ่มหลักสูตร',
+          onClick: handleSave,
+          loading: saving,
+          disabled: selected.length === 0 || !form.CourseName.trim(),
+        }}
+        secondaryAction={{ label: 'ยกเลิก', onClick: () => setModalOpen(false) }}
+      >
+        <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-600 mb-1.5">
@@ -930,9 +931,11 @@ const CourseManagement: React.FC = () => {
                     </div>
                     <div className="overflow-y-auto max-h-64 divide-y divide-gray-50">
                       {selected.length === 0 ? (
-                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                          ยังไม่ได้เลือกผู้เข้าอบรม
-                        </div>
+                        <ModalEmptyState
+                          icon={Users}
+                          title="ยังไม่ได้เลือกผู้เข้าอบรม"
+                          description="ติ๊กรายชื่อจากช่องด้านซ้าย แล้วมาระบุสถานที่หรือแนบเกียรติบัตรได้ที่นี่"
+                        />
                       ) : (
                         selected.map(a => (
                           <div key={a.StID} className="px-4 py-3 space-y-2">
@@ -1030,27 +1033,8 @@ const CourseManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {saving && <Loader2 size={18} className="animate-spin" />}
-                {form.id ? 'บันทึกการแก้ไข' : 'เพิ่มหลักสูตร'}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmModal
         isOpen={confirmModal.open}
