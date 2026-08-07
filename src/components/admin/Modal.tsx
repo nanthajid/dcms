@@ -20,8 +20,7 @@ import {
  * class อย่าง animate-in / zoom-in-95 ที่ใช้อยู่เดิมจึงไม่มีผลอะไร
  * ที่นี่ใช้ keyframes จริงใน App.css แทน (.dcms-modal-*)
  *
- * หมายเหตุเรื่อง dark mode: ผูกกับ class .dark ที่ <html> ไม่ใช่ prefers-color-scheme
- * เพราะหน้าอื่นยังเป็นธีมสว่างอย่างเดียว ถ้าเด้งตาม OS จะกลายเป็น modal ดำบนหน้าขาว
+ * ธีมสว่างอย่างเดียวตามทั้งระบบ ไม่มี dark mode
  */
 
 export type ModalVariant = 'default' | 'info' | 'success' | 'warning' | 'error';
@@ -224,15 +223,13 @@ const Modal: React.FC<ModalProps> = ({
         className={`dcms-modal-panel dcms-modal-panel--${state} relative w-full ${SIZES[size]}
                     max-h-[calc(100dvh-2rem)] sm:max-h-[90dvh]
                     flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl
-                    ring-1 ring-black/5 outline-none
-                    dark:bg-slate-900 dark:ring-white/10`}
+                    ring-1 ring-black/5 outline-none`}
       >
         {/* ---------- Header ---------- */}
-        <header className="flex items-start gap-4 px-6 py-5 border-b border-gray-100 dark:border-slate-800">
+        <header className="flex items-start gap-4 px-6 py-5 border-b border-gray-100">
           <div
             className={`dcms-modal-icon flex-shrink-0 grid place-items-center
-                        w-11 h-11 rounded-xl ring-4 ${v.ring} ${v.iconClass}
-                        dark:bg-white/5`}
+                        w-11 h-11 rounded-xl ring-4 ${v.ring} ${v.iconClass}`}
           >
             <Icon size={20} strokeWidth={2} aria-hidden="true" />
           </div>
@@ -240,14 +237,14 @@ const Modal: React.FC<ModalProps> = ({
           <div className="min-w-0 flex-1">
             <h2
               id={titleId}
-              className="text-lg font-bold text-gray-800 dark:text-slate-100 leading-snug truncate"
+              className="text-lg font-bold text-gray-800 leading-snug truncate"
             >
               {title}
             </h2>
             {subtitle && (
               <p
                 id={descId}
-                className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed"
+                className="text-sm text-gray-500 mt-0.5 leading-relaxed"
               >
                 {subtitle}
               </p>
@@ -261,8 +258,7 @@ const Modal: React.FC<ModalProps> = ({
             className="dcms-modal-close flex-shrink-0 p-2 -m-1 rounded-lg text-gray-400
                        hover:text-gray-600 hover:bg-gray-100 active:scale-95
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                       transition-all duration-200
-                       dark:text-slate-500 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                       transition-all duration-200"
           >
             <X size={20} />
           </button>
@@ -274,8 +270,7 @@ const Modal: React.FC<ModalProps> = ({
             <div
               role="alert"
               className="dcms-modal-alert mb-4 flex items-start gap-2.5 rounded-xl border
-                         border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700
-                         dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
+                         border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
             >
               <XCircle size={17} className="mt-px flex-shrink-0" aria-hidden="true" />
               <span>{error}</span>
@@ -288,8 +283,7 @@ const Modal: React.FC<ModalProps> = ({
         {/* ---------- Footer ---------- */}
         {(footer || hasDefaultFooter) && (
           <footer
-            className="flex-shrink-0 border-t border-gray-100 px-6 py-4
-                       dark:border-slate-800"
+            className="flex-shrink-0 border-t border-gray-100 px-6 py-4"
           >
             {footer ?? (
               <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
@@ -298,8 +292,7 @@ const Modal: React.FC<ModalProps> = ({
                     type="button"
                     onClick={textLink.onClick}
                     className="text-sm font-medium text-gray-500 hover:text-primary
-                               underline-offset-4 hover:underline transition-colors duration-200
-                               dark:text-slate-400 dark:hover:text-slate-200"
+                               underline-offset-4 hover:underline transition-colors duration-200"
                   >
                     {textLink.label}
                   </button>
@@ -338,8 +331,7 @@ const ModalButton: React.FC<{ action: ModalAction; kind: 'primary' | 'secondary'
 
   const tone =
     kind === 'secondary'
-      ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 focus-visible:ring-gray-300 ' +
-        'dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+      ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 focus-visible:ring-gray-300'
       : action.tone === 'danger'
       ? 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus-visible:ring-rose-500'
       : 'bg-primary text-white shadow-sm hover:opacity-90 focus-visible:ring-primary';
@@ -381,13 +373,13 @@ export const ModalEmptyState: React.FC<{
   <div className="py-12 text-center">
     <div
       className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full
-                 bg-gray-50 text-gray-300 dark:bg-slate-800 dark:text-slate-600"
+                 bg-gray-50 text-gray-300"
     >
       <Icon size={30} aria-hidden="true" />
     </div>
-    <h4 className="text-base font-bold text-gray-500 dark:text-slate-300">{title}</h4>
+    <h4 className="text-base font-bold text-gray-500">{title}</h4>
     {description && (
-      <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">{description}</p>
+      <p className="mt-1 text-sm text-gray-400">{description}</p>
     )}
     {action && <div className="mt-5">{action}</div>}
   </div>
@@ -403,12 +395,12 @@ export const ModalSection: React.FC<{
     {(title || description) && (
       <div>
         {title && (
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
             {title}
           </h3>
         )}
         {description && (
-          <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">{description}</p>
+          <p className="mt-1 text-xs text-gray-400">{description}</p>
         )}
       </div>
     )}
