@@ -26,8 +26,14 @@ try {
     if ($action === 'list') {
         // ดึงหลักสูตรพร้อมผู้เข้าอบรมในคิวรีเดียว แล้วค่อยจับกลุ่มใน PHP
         // (แยกยิงทีละหลักสูตรจะกลายเป็น N+1 query)
+        //
+        // เรียงตามลำดับที่บันทึกเข้าระบบ ใหม่สุดขึ้นก่อน — รายการที่เพิ่งเพิ่ม
+        // จะอยู่บนสุดเสมอ ไม่ว่าวันอบรมจะเป็นเมื่อไหร่
+        // (เดิมเรียงตาม TrDateFrom ทำให้หลักสูตรที่เพิ่งเพิ่มไปโผล่กลางตาราง)
+        // id เป็น auto-increment ใช้ตัดสินลำดับเมื่อ created_at ซ้ำกัน
+        // เช่นข้อมูลตั้งต้นที่ import เข้ามาพร้อมกันทั้งชุด
         $courses = $conn->query(
-            "SELECT * FROM courses ORDER BY TrDateFrom DESC, id DESC"
+            "SELECT * FROM courses ORDER BY created_at DESC, id DESC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $rows = $conn->query(
