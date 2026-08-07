@@ -39,6 +39,13 @@ const AdminLayout: React.FC = () => {
   // สิทธิ์เมนูตาม user_type (admin เห็นครบเสมอ)
   const [permissions, setPermissions] = useState<MenuPermissions>(DEFAULT_PERMISSIONS);
 
+  // รูปเจ้าหน้าที่มาจาก login.php (join staffs) — บัญชีที่ล็อกอินค้างไว้ก่อนอัปเดต
+  // จะยังไม่มีค่านี้ จึงต้องมีตัวอักษรย่อเป็นตัวสำรองเสมอ
+  const [avatarError, setAvatarError] = useState(false);
+  const avatarUrl = adminUser.image ? `/dcms/${adminUser.image}` : null;
+  const roleLabel =
+    adminUser.user_type === 'admin' ? 'ผู้ดูแลระบบ' : adminUser.user_type || 'ผู้ใช้งาน';
+
   useEffect(() => {
     // admin เห็นทุกเมนูอยู่แล้ว ไม่ต้องยิง API
     if (adminUser.user_type === SUPERUSER_TYPE) return;
@@ -172,24 +179,8 @@ const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 mb-4 p-2">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold">
-              {adminUser.fullname?.[0] || 'A'}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-semibold truncate">{adminUser.fullname || 'Administrator'}</p>
-              <p className="text-xs text-slate-400">ผู้ดูแลระบบ</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-          >
-            <LogOut size={20} />
-            <span className="font-medium">ออกจากระบบ</span>
-          </button>
-        </div>
+        {/* ตัวตนผู้ใช้กับปุ่มออกจากระบบย้ายไปอยู่มุมขวาบนของ navbar ทั้งคู่แล้ว
+            ไม่ต้องมีซ้ำตรงนี้อีก แถบเมนูจึงเหลือพื้นที่ให้รายการเมนูเต็ม ๆ */}
       </aside>
 
       {/* Main Content */}
@@ -199,8 +190,49 @@ const AdminLayout: React.FC = () => {
             <Menu className="md:hidden" />
             Panel Control
           </h1>
-          <div className="text-sm text-gray-500">
-            ระบบบริหารจัดการข้อมูล AR2Home
+          {/* มุมขวาบน = ที่ที่ผู้ใช้คาดว่าจะเจอตัวตนตัวเองกับปุ่มออกจากระบบ
+              จอแคบซ่อนข้อความไว้ เหลือแค่ไอคอน ปุ่มจึงไม่เบียดหัวข้อ */}
+          <div className="flex items-center gap-3">
+            <span className="hidden xl:block text-sm text-gray-500">
+              ระบบบริหารจัดการข้อมูล AR2Home
+            </span>
+            <span className="hidden xl:block h-6 w-px bg-gray-200" aria-hidden="true" />
+
+            {/* ตัวตนผู้ใช้ วางไว้ก่อนปุ่มออกจากระบบ */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              {avatarUrl && !avatarError ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  onError={() => setAvatarError(true)}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary text-white grid place-items-center font-bold text-sm ring-2 ring-gray-100 flex-shrink-0">
+                  {adminUser.fullname?.[0] || 'A'}
+                </div>
+              )}
+              <div className="hidden md:block min-w-0 leading-tight">
+                <p className="text-sm font-semibold text-gray-800 truncate max-w-[200px]">
+                  {[adminUser.title, adminUser.fullname].filter(Boolean).join('') ||
+                    'Administrator'}
+                </p>
+                <p className="text-[11px] text-gray-400 truncate">{roleLabel}</p>
+              </div>
+            </div>
+
+            <span className="h-6 w-px bg-gray-200" aria-hidden="true" />
+            <button
+              onClick={handleLogout}
+              title="ออกจากระบบ"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                         text-gray-500 hover:text-red-600 hover:bg-red-50 active:scale-95
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                         transition-all duration-200"
+            >
+              <LogOut size={18} />
+              <span className="hidden sm:inline">ออกจากระบบ</span>
+            </button>
           </div>
         </header>
         
