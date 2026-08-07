@@ -53,12 +53,36 @@ if (!empty($data->username) && !empty($data->password)) {
                 }
 
                 if (in_array($row['user_type'], $allowedTypes, true)) {
+                    // รูปกับคำนำหน้าของเจ้าหน้าที่ ไว้แสดงบน navbar หลังบ้าน
+                    // ครอบ try ไว้ต่างหาก จะได้ไม่ทำให้ล็อกอินพังถ้าตาราง staffs/titles มีปัญหา
+                    $image = null;
+                    $title = null;
+                    if (!empty($row['StID'])) {
+                        try {
+                            $st = $conn->prepare(
+                                "SELECT s.image, t.Title
+                                 FROM staffs s
+                                 LEFT JOIN titles t ON s.TitleNo = t.TitleNo
+                                 WHERE s.StID = ? LIMIT 1"
+                            );
+                            $st->execute([$row['StID']]);
+                            if ($s = $st->fetch(PDO::FETCH_ASSOC)) {
+                                $image = $s['image'] ?: null;
+                                $title = $s['Title'] ?: null;
+                            }
+                        } catch (PDOException $e) {
+                            // ไม่มีรูปก็แสดงเป็นตัวอักษรย่อแทนได้ ไม่ใช่เรื่องคอขาดบาดตาย
+                        }
+                    }
+
                     $user = [
                         "id" => $row['id'],
                         "username" => $row['username'],
                         "fullname" => $row['fullname'],
                         "user_type" => $row['user_type'],
-                        "StID" => $row['StID'] ?? null
+                        "StID" => $row['StID'] ?? null,
+                        "title" => $title,
+                        "image" => $image
                     ];
 
                     // ตัวจริงที่ใช้ตรวจสิทธิ์คือ session ฝั่งเซิร์ฟเวอร์
