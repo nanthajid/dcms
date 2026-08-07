@@ -92,9 +92,10 @@ if (!empty($StID) && !empty($StName)) {
         // Create User Account
         $user_query = "INSERT INTO users (username, password, fullname, user_type, StID)
                        VALUES (:username, :password, :fullname, :user_type, :StID)";
+        $hashedPassword = hashPassword($password);
         $user_stmt = $conn->prepare($user_query);
         $user_stmt->bindParam(":username", $username);
-        $user_stmt->bindParam(":password", $password);
+        $user_stmt->bindParam(":password", $hashedPassword);
         $user_stmt->bindParam(":fullname", $StName);
         $user_stmt->bindParam(":user_type", $user_type);
         $user_stmt->bindParam(":StID", $StID);

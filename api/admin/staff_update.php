@@ -83,9 +83,10 @@ if (!empty($StID) && !empty($StName)) {
 
         // Update User Account
         if (!empty($password)) {
+            $hashedPassword = hashPassword($password);
             $user_query = "UPDATE users SET username = :username, password = :password, fullname = :fullname, user_type = :user_type WHERE StID = :StID";
             $user_stmt = $conn->prepare($user_query);
-            $user_stmt->bindParam(":password", $password);
+            $user_stmt->bindParam(":password", $hashedPassword);
         } else {
             $user_query = "UPDATE users SET username = :username, fullname = :fullname, user_type = :user_type WHERE StID = :StID";
             $user_stmt = $conn->prepare($user_query);

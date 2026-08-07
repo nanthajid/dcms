@@ -22,10 +22,24 @@ if (!empty($data->username) && !empty($data->password)) {
         if ($stmt->rowCount() > 0) {
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Check password (supports plain text for dev or hashed for prod)
             $isValid = false;
-            if ($data->password === $row['password'] || password_verify($data->password, $row['password'])) {
-                $isValid = true;
+
+            if (looksHashed($row['password'])) {
+                $isValid = password_verify($data->password, $row['password']);
+
+                // อัลกอริทึมเริ่มต้นของ PHP เปลี่ยนได้ตามเวอร์ชัน อัปเกรดให้ตอนล็อกอิน
+                if ($isValid && password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
+                    $up = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $up->execute([hashPassword($data->password), $row['id']]);
+                }
+            } else {
+                // ข้อมูลเก่าที่ยังเป็น plaintext — ปกติถูก migrate ไปหมดแล้ว
+                // เหลือไว้กันคนตกหล่นล็อกอินไม่ได้ ถ้าเจอให้แปลงเป็น hash ทันที
+                $isValid = hash_equals((string)$row['password'], (string)$data->password);
+                if ($isValid) {
+                    $up = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $up->execute([hashPassword($data->password), $row['id']]);
+                }
             }
 
             if ($isValid) {

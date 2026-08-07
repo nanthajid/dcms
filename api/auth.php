@@ -96,6 +96,25 @@ if (!function_exists('startAppSession')) {
     }
 
     /**
+     * เข้ารหัสรหัสผ่านก่อนเก็บลงฐานข้อมูล — ทุกที่ที่เขียนคอลัมน์ users.password
+     * ต้องผ่านฟังก์ชันนี้ ห้ามเก็บข้อความตรง ๆ
+     */
+    function hashPassword(string $plain): string
+    {
+        return password_hash($plain, PASSWORD_DEFAULT);
+    }
+
+    /**
+     * ค่าที่เก็บอยู่เป็น hash แล้วหรือยัง
+     * ใช้แยกข้อมูลเก่าที่ยังเป็น plaintext ตอน migrate และตอนล็อกอิน
+     */
+    function looksHashed(?string $stored): bool
+    {
+        if ($stored === null || $stored === '') return false;
+        return password_get_info($stored)['algo'] !== null;
+    }
+
+    /**
      * ตรวจสิทธิ์ระดับเมนู/ปุ่มตามที่ตั้งไว้ในหน้าจัดการ user_type
      * ใช้กับ endpoint ที่อยากบังคับฝั่งเซิร์ฟเวอร์ด้วย ไม่ใช่ซ่อนแค่ปุ่มบนหน้าจอ
      */
