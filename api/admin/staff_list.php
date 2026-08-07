@@ -18,7 +18,8 @@ try {
                 p.StPostName,
                 d.DepName,
                 u.username,
-                u.password,
+                -- ห้าม SELECT u.password ออกมาเด็ดขาด: endpoint นี้เรียกได้โดยไม่ต้องล็อกอิน
+                -- และหน้าแก้ไขก็ล้างช่องรหัสผ่านทิ้งอยู่แล้ว (StaffManagement.tsx handleEditClick)
                 u.user_type
               FROM staffs s
               LEFT JOIN titles t ON s.TitleNo = t.TitleNo
