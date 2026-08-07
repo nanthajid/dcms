@@ -15,7 +15,8 @@ import {
   Menu,
   BarChart2,
   Clock,
-  Coins
+  Coins,
+  GraduationCap
 } from 'lucide-react';
 
 interface MenuItem {
@@ -77,6 +78,7 @@ const AdminLayout: React.FC = () => {
     { icon: <Users size={20} />, menuKey: 'counselors', label: 'จัดการนักแนะแนว', path: '/admin/counselors', tooltip: 'จัดการข้อมูลนักแนะแนว' },
     { icon: <Calendar size={20} />, menuKey: 'appointments', label: 'การนัดหมาย', path: '/admin/appointments', tooltip: 'จัดการการนัดหมายกับนักศึกษา' },
     { icon: <HomeIcon size={20} />, menuKey: 'wfh', label: 'จัดการ WFH', path: '/admin/wfh', tooltip: 'จัดการการปฏิบัติงานจากบ้าน' },
+    { icon: <GraduationCap size={20} />, menuKey: 'courses', label: 'จัดการการฝึกอบรม', path: '/admin/courses', tooltip: 'บันทึกหลักสูตรฝึกอบรมและรายชื่อเจ้าหน้าที่ที่เข้าร่วม' },
     {
       icon: <BarChart2 size={20} />,
       menuKey: 'reports',

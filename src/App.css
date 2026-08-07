@@ -1,2 +1,66 @@
 /* Standard Tailwind directives are in index.css */
 /* Add any global App-specific styles here if needed */
+
+/* ---- ปฏิทินไทย (components/admin/ThaiDatePicker) ----------------------
+   react-datepicker มาพร้อม CSS ของตัวเอง ปรับให้เข้ากับหน้าหลังบ้าน
+   (มุมมน ฟอนต์เดียวกับระบบ สีเลือกเป็น --color-primary) */
+
+/* ต้องสูงกว่า modal ที่ใช้ z-[200] ไม่งั้นปฏิทินโผล่อยู่ใต้ modal */
+.react-datepicker-popper {
+  z-index: 300;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border-color: #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+}
+
+.react-datepicker__header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+  padding-top: 0;
+}
+
+.react-datepicker__day-name {
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.react-datepicker__day {
+  border-radius: 0.5rem;
+}
+
+.react-datepicker__day:hover {
+  background-color: #eff6ff;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.react-datepicker__day--selected:hover {
+  background-color: var(--color-primary);
+}
+
+.react-datepicker__day--today {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.react-datepicker__day--outside-month {
+  color: #d1d5db;
+}
+
+/* input ของปฏิทินต้องกว้างเต็มช่องเหมือน input อื่นในฟอร์ม */
+.thai-datepicker .react-datepicker-wrapper,
+.thai-datepicker .react-datepicker__input-container {
+  display: block;
+  width: 100%;
+}

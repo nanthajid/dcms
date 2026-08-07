@@ -19,6 +19,7 @@ export const MENU_CATALOG: MenuAccessItem[] = [
   { key: 'counselors', label: 'จัดการนักแนะแนว' },
   { key: 'appointments', label: 'การนัดหมาย' },
   { key: 'wfh', label: 'จัดการ WFH' },
+  { key: 'courses', label: 'จัดการการฝึกอบรม' },
   { key: 'reports', label: 'รายงาน' },
   { key: 'work-rates', label: 'จัดการค่าธรรมเนียม' },
   { key: 'settings', label: 'ตั้งค่าระบบ' },
@@ -51,6 +52,9 @@ export const ACTION_CATALOG: MenuAccessItem[] = [
   { key: 'staff.create', label: 'เพิ่มเจ้าหน้าที่ใหม่' },
   { key: 'staff.departments', label: 'จัดการฝ่าย/แผนก' },
   { key: 'staff.usertypes', label: 'จัดการ user_type' },
+  { key: 'courses.create', label: 'เพิ่มหลักสูตรฝึกอบรม' },
+  { key: 'courses.edit', label: 'แก้ไขหลักสูตรฝึกอบรม' },
+  { key: 'courses.delete', label: 'ลบหลักสูตรฝึกอบรม' },
 ];
 
 /** รายการทั้งหมดที่แสดงในตารางกำหนดสิทธิ์ */
