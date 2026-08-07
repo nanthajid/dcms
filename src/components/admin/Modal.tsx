@@ -51,6 +51,8 @@ const VARIANTS: Record<
     accent: string;
     tint: string;
     glow: string;
+    /** ไล่สีของหัวแบบทึบ ใช้กับ tone="solid" */
+    solid: string;
   }
 > = {
   default: {
@@ -60,6 +62,7 @@ const VARIANTS: Record<
     accent: 'from-primary via-primary/90 to-primary/50',
     tint: 'from-primary/[0.10] via-primary/[0.04] to-transparent',
     glow: 'bg-primary/20',
+    solid: 'from-primary via-indigo-700 to-violet-600',
   },
   info: {
     icon: Info,
@@ -68,6 +71,7 @@ const VARIANTS: Record<
     accent: 'from-blue-600 via-blue-500/90 to-blue-400/50',
     tint: 'from-blue-500/[0.10] via-blue-500/[0.04] to-transparent',
     glow: 'bg-blue-400/25',
+    solid: 'from-blue-600 via-blue-500 to-indigo-500',
   },
   success: {
     icon: CheckCircle2,
@@ -76,6 +80,7 @@ const VARIANTS: Record<
     accent: 'from-emerald-600 via-emerald-500/90 to-emerald-400/50',
     tint: 'from-emerald-500/[0.10] via-emerald-500/[0.04] to-transparent',
     glow: 'bg-emerald-400/25',
+    solid: 'from-emerald-600 via-emerald-500 to-teal-500',
   },
   warning: {
     icon: AlertTriangle,
@@ -84,6 +89,7 @@ const VARIANTS: Record<
     accent: 'from-amber-500 via-amber-400/90 to-amber-300/50',
     tint: 'from-amber-500/[0.12] via-amber-500/[0.04] to-transparent',
     glow: 'bg-amber-400/25',
+    solid: 'from-amber-500 via-orange-500 to-rose-400',
   },
   error: {
     icon: XCircle,
@@ -92,6 +98,7 @@ const VARIANTS: Record<
     accent: 'from-rose-600 via-rose-500/90 to-rose-400/50',
     tint: 'from-rose-500/[0.10] via-rose-500/[0.04] to-transparent',
     glow: 'bg-rose-400/25',
+    solid: 'from-rose-600 via-rose-500 to-pink-500',
   },
 };
 
@@ -118,6 +125,21 @@ export interface ModalProps {
   /** คลิกพื้นหลังเพื่อปิด — ปิดไว้เมื่อฟอร์มมีข้อมูลที่ยังไม่ได้บันทึก */
   closeOnBackdrop?: boolean;
   closeOnEsc?: boolean;
+
+  /**
+   * หน้าตาของหัว modal
+   * - 'tint'  พื้นขาวไล่สีจาง ตัวอักษรเข้ม (ค่าเริ่มต้น เหมาะกับฟอร์มยาว ๆ)
+   * - 'solid' แถบไล่สีทึบ ตัวอักษรขาว เด่นกว่า เหมาะกับ modal สั้นที่ต้องการดึงสายตา
+   */
+  tone?: 'tint' | 'solid';
+  /** ป้ายเล็กมุมขวาของหัว เช่น "Beta" */
+  badge?: string;
+  /** ข้อความใบ้แถบล่างสุด แสดงจัดกลางแบบจาง ๆ */
+  hint?: React.ReactNode;
+  /** จัดเนื้อหากลางพร้อมไอคอนใหญ่ เหมาะกับ modal ที่มีปุ่มเดียว */
+  align?: 'left' | 'center';
+  /** ไอคอนใหญ่กลางเนื้อหา ใช้เมื่อ align="center" */
+  hero?: React.ElementType;
 
   /** true = แสดง skeleton แทนเนื้อหา */
   loading?: boolean;
@@ -148,6 +170,11 @@ const Modal: React.FC<ModalProps> = ({
   size = 'md',
   closeOnBackdrop = true,
   closeOnEsc = true,
+  tone = 'tint',
+  badge,
+  hint,
+  align = 'left',
+  hero: Hero,
   loading = false,
   error = null,
   primaryAction,
@@ -238,6 +265,7 @@ const Modal: React.FC<ModalProps> = ({
 
   const v = VARIANTS[variant];
   const Icon = icon ?? v.icon;
+  const isSolid = tone === 'solid';
   const state = closing ? 'closing' : 'open';
   const titleId = 'dcms-modal-title';
   const descId = subtitle ? 'dcms-modal-subtitle' : undefined;
@@ -273,33 +301,44 @@ const Modal: React.FC<ModalProps> = ({
                     flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl
                     ring-1 ring-black/5 outline-none`}
       >
-        {/* แถบบางบนสุด บอกประเภท modal ตั้งแต่แรกเห็นโดยไม่ต้องอ่านข้อความ */}
-        <div
-          className={`h-1 w-full flex-shrink-0 bg-gradient-to-r ${v.accent}`}
-          aria-hidden="true"
-        />
+        {/* แถบบางบนสุด บอกประเภท modal ตั้งแต่แรกเห็นโดยไม่ต้องอ่านข้อความ
+            หัวแบบ solid เป็นแถบสีเต็มอยู่แล้ว ไม่ต้องมีเส้นนี้ซ้อนอีก */}
+        {!isSolid && (
+          <div
+            className={`h-1 w-full flex-shrink-0 bg-gradient-to-r ${v.accent}`}
+            aria-hidden="true"
+          />
+        )}
 
         {/* ---------- Header ---------- */}
         <header
-          className={`relative flex-shrink-0 overflow-hidden border-b border-gray-100
-                      bg-gradient-to-br ${v.tint}`}
+          className={`relative flex-shrink-0 overflow-hidden ${
+            isSolid
+              ? `bg-gradient-to-r ${v.solid} text-white`
+              : `border-b border-gray-100 bg-gradient-to-br ${v.tint}`
+          }`}
         >
           {/* วงกลมเบลอหลังไอคอน ให้หัวมีมิติแทนที่จะเป็นแผ่นสีเรียบ */}
           <div
             className={`pointer-events-none absolute -left-8 -top-14 h-36 w-36 rounded-full
-                        blur-3xl opacity-60 ${v.glow}`}
+                        blur-3xl opacity-60 ${isSolid ? 'bg-white/25' : v.glow}`}
             aria-hidden="true"
           />
           {/* ลายเส้นทแยงฝั่งขวา ที่ที่ไม่มีข้อความ */}
           <div
-            className="dcms-modal-header-deco pointer-events-none absolute inset-y-0 right-0 w-1/2"
+            className={`dcms-modal-header-deco pointer-events-none absolute inset-y-0 right-0 w-1/2 ${
+              isSolid ? 'opacity-0' : ''
+            }`}
             aria-hidden="true"
           />
 
           <div className="relative flex items-start gap-4 px-6 py-5">
             <div
-              className={`dcms-modal-icon flex-shrink-0 grid place-items-center
-                          w-11 h-11 rounded-xl shadow-sm ring-4 ${v.ring} ${v.iconClass}`}
+              className={`dcms-modal-icon flex-shrink-0 grid place-items-center w-11 h-11 rounded-xl ${
+                isSolid
+                  ? 'bg-white/20 text-white ring-1 ring-white/25 backdrop-blur-sm'
+                  : `shadow-sm ring-4 ${v.ring} ${v.iconClass}`
+              }`}
             >
               <Icon size={20} strokeWidth={2} aria-hidden="true" />
             </div>
@@ -307,29 +346,47 @@ const Modal: React.FC<ModalProps> = ({
             <div className="min-w-0 flex-1 pt-0.5">
               <h2
                 id={titleId}
-                className="text-lg font-bold text-gray-800 leading-snug truncate"
+                className={`text-lg font-bold leading-snug truncate ${
+                  isSolid ? 'text-white' : 'text-gray-800'
+                }`}
               >
                 {title}
               </h2>
               {subtitle && (
                 <p
                   id={descId}
-                  className="text-sm text-gray-500 mt-1 leading-relaxed"
+                  className={`text-sm mt-1 leading-relaxed ${
+                    isSolid ? 'text-white/80' : 'text-gray-500'
+                  }`}
                 >
                   {subtitle}
                 </p>
               )}
             </div>
 
+            {badge && (
+              <span
+                className={`flex-shrink-0 self-start px-3 py-1 rounded-full text-[11px] font-bold ${
+                  isSolid
+                    ? 'bg-white/20 text-white ring-1 ring-white/25'
+                    : 'bg-primary/10 text-primary ring-1 ring-primary/15'
+                }`}
+              >
+                {badge}
+              </span>
+            )}
+
             <button
               type="button"
               onClick={onClose}
               aria-label="ปิดหน้าต่าง"
-              className="dcms-modal-close flex-shrink-0 grid place-items-center h-9 w-9 rounded-lg
-                         bg-white/70 text-gray-400 ring-1 ring-black/5 backdrop-blur-sm
-                         hover:bg-white hover:text-gray-600 hover:ring-black/10 active:scale-95
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                         transition-all duration-200"
+              className={`dcms-modal-close flex-shrink-0 grid place-items-center h-9 w-9 rounded-lg
+                          backdrop-blur-sm active:scale-95 transition-all duration-200
+                          focus-visible:outline-none focus-visible:ring-2 ${
+                            isSolid
+                              ? 'bg-white/15 text-white/80 ring-1 ring-white/20 hover:bg-white/25 hover:text-white focus-visible:ring-white'
+                              : 'bg-white/70 text-gray-400 ring-1 ring-black/5 hover:bg-white hover:text-gray-600 hover:ring-black/10 focus-visible:ring-primary'
+                          }`}
             >
               <X size={18} />
             </button>
@@ -349,7 +406,23 @@ const Modal: React.FC<ModalProps> = ({
             </div>
           )}
 
-          {loading ? <ModalSkeleton /> : children}
+          {loading ? (
+            <ModalSkeleton />
+          ) : align === 'center' ? (
+            <div className="py-4 text-center">
+              {Hero && (
+                <div
+                  className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-2xl
+                             bg-gray-100 text-gray-400"
+                >
+                  <Hero size={34} strokeWidth={1.75} aria-hidden="true" />
+                </div>
+              )}
+              {children}
+            </div>
+          ) : (
+            children
+          )}
         </div>
 
         {/* ---------- Footer ----------
@@ -366,7 +439,13 @@ const Modal: React.FC<ModalProps> = ({
               aria-hidden="true"
             />
             {footer ?? (
-              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
+              <div
+                className={`flex gap-3 ${
+                  align === 'center'
+                    ? 'flex-col items-stretch'
+                    : 'flex-col-reverse sm:flex-row sm:items-center'
+                }`}
+              >
                 {textLink && (
                   <button
                     type="button"
@@ -378,15 +457,36 @@ const Modal: React.FC<ModalProps> = ({
                   </button>
                 )}
 
-                <div className="sm:ml-auto flex flex-col-reverse sm:flex-row gap-3 w-full sm:w-auto">
+                <div
+                  className={`flex gap-3 w-full ${
+                    align === 'center'
+                      ? 'flex-col'
+                      : 'sm:ml-auto flex-col-reverse sm:flex-row sm:w-auto'
+                  }`}
+                >
                   {secondaryAction && (
-                    <ModalButton action={secondaryAction} kind="secondary" />
+                    <ModalButton action={secondaryAction} kind="secondary" tone={tone} />
                   )}
-                  {primaryAction && <ModalButton action={primaryAction} kind="primary" />}
+                  {primaryAction && (
+                    <ModalButton
+                      action={primaryAction}
+                      kind="primary"
+                      tone={tone}
+                      gradient={v.solid}
+                      pill={align === 'center'}
+                    />
+                  )}
                 </div>
               </div>
             )}
           </footer>
+        )}
+
+        {/* แถบข้อความใบ้ล่างสุด — เตี้ยและจางกว่าแถบปุ่ม จะได้ไม่แย่งความสนใจ */}
+        {hint && (
+          <div className="flex-shrink-0 border-t border-gray-100 bg-gray-50/80 px-6 py-2.5 text-center text-[11px] text-gray-400">
+            {hint}
+          </div>
         )}
       </div>
     </div>,
@@ -396,24 +496,32 @@ const Modal: React.FC<ModalProps> = ({
 
 /* ------------------------------------------------------------------ */
 
-const ModalButton: React.FC<{ action: ModalAction; kind: 'primary' | 'secondary' }> = ({
-  action,
-  kind,
-}) => {
+const ModalButton: React.FC<{
+  action: ModalAction;
+  kind: 'primary' | 'secondary';
+  tone?: 'tint' | 'solid';
+  /** ไล่สีของปุ่มหลักเมื่อใช้คู่กับหัวแบบ solid */
+  gradient?: string;
+  /** ทรงแคปซูล ใช้กับ modal ที่มีปุ่มเดียวจัดกลาง */
+  pill?: boolean;
+}> = ({ action, kind, tone = 'tint', gradient, pill }) => {
   const busy = !!action.loading;
   const disabled = !!action.disabled || busy;
 
   const base =
-    'dcms-modal-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl ' +
-    'font-bold text-sm transition-all duration-200 w-full sm:w-auto ' +
+    'dcms-modal-btn inline-flex items-center justify-center gap-2 font-bold transition-all duration-200 ' +
+    (pill ? 'px-7 py-3 rounded-full text-[15px] w-full ' : 'px-5 py-2.5 rounded-xl text-sm w-full sm:w-auto ') +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
     'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100';
 
-  const tone =
+  // ชื่อ toneClass ไม่ใช่ tone เพราะ tone เป็นชื่อ prop ที่รับเข้ามาแล้ว
+  const toneClass =
     kind === 'secondary'
       ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 focus-visible:ring-gray-300'
       : action.tone === 'danger'
       ? 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus-visible:ring-rose-500'
+      : tone === 'solid' && gradient
+      ? `bg-gradient-to-r ${gradient} text-white shadow-lg shadow-primary/25 hover:brightness-110 focus-visible:ring-primary`
       : 'bg-primary text-white shadow-sm hover:opacity-90 focus-visible:ring-primary';
 
   return (
@@ -422,7 +530,7 @@ const ModalButton: React.FC<{ action: ModalAction; kind: 'primary' | 'secondary'
       onClick={action.onClick}
       disabled={disabled}
       aria-busy={busy}
-      className={`${base} ${tone}`}
+      className={`${base} ${toneClass}`}
     >
       {busy && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
       {action.label}
